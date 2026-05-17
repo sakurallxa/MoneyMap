@@ -167,43 +167,178 @@ struct AccountDetailView: View {
         }
     }
 
+    /// 账户 Hero — 深邃黑金(Onyx)信用卡风格,Centurion / Apple Card titanium 味道。
     private var summaryHero: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(spacing: 6) {
-                Image(systemName: account.type.iconName)
-                    .font(.system(size: 11, weight: .semibold))
-                Text(eyebrowText)
-                    .font(.system(size: 11, weight: .semibold))
-                    .kerning(0.8)
-            }
-            .foregroundStyle(.secondary)
+        ZStack(alignment: .topLeading) {
+            // 1. 深炭灰对角渐变底
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 0.135, green: 0.135, blue: 0.150),
+                            Color(red: 0.055, green: 0.055, blue: 0.070)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
 
-            Text(hideBalance ? kHiddenAmountMask : "¥\(formatNumber(totalValueCNY))")
-                .font(.system(size: 38, weight: .bold, design: .rounded))
-                .kerning(-1)
-                .monospacedDigit()
-                .foregroundStyle(.primary)
-                .accessibilityLabel(totalValueCNY.accessibilityAmountLabel(prefix: "账户总值", hidden: hideBalance))
+            // 2. 顶边高光(亚光金属反射)
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .strokeBorder(
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(0.22),
+                            Color.white.opacity(0.05),
+                            Color.clear
+                        ],
+                        startPoint: .top,
+                        endPoint: .center
+                    ),
+                    lineWidth: 1
+                )
+
+            // 3. 右上角铜色柔光
+            RadialGradient(
+                colors: [
+                    Color(red: 0.78, green: 0.58, blue: 0.42, opacity: 0.30),
+                    Color.clear
+                ],
+                center: .topTrailing,
+                startRadius: 0,
+                endRadius: 220
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+
+            // 4. 左下角微弱蓝紫光,补反差
+            RadialGradient(
+                colors: [
+                    Color(red: 0.30, green: 0.32, blue: 0.45, opacity: 0.18),
+                    Color.clear
+                ],
+                center: .bottomLeading,
+                startRadius: 0,
+                endRadius: 180
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+
+            // 5. 内容
+            heroContent
+                .padding(22)
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 22)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(Color(.secondarySystemGroupedBackground))
-        )
-        .cardElevation()
+        .frame(height: 188)
+        .shadow(color: .black.opacity(0.30), radius: 22, x: 0, y: 12)
     }
 
-    private var eyebrowText: String {
-        var parts = [account.type.displayName]
-        if hasMultipleCurrencies {
-            parts.append("含外币持仓")
-            parts.append("CNY 折算")
-        } else if account.currency != .cny {
-            parts.append("CNY 折算")
+    /// Hero 内容层
+    private var heroContent: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // 顶行:chip + 铜色英文 label + 角落账户类型 icon
+            HStack(alignment: .top, spacing: 12) {
+                emvChip
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(englishLabel)
+                        .font(.system(size: 10, weight: .heavy))
+                        .tracking(2.4)
+                        .foregroundStyle(Color(red: 0.82, green: 0.62, blue: 0.46))
+                    Text(account.type.displayName)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Color.white.opacity(0.92))
+                }
+                Spacer()
+                Image(systemName: account.type.iconName)
+                    .font(.system(size: 17, weight: .light))
+                    .foregroundStyle(Color.white.opacity(0.22))
+            }
+
+            Spacer(minLength: 14)
+
+            // BALANCE label
+            Text(balanceLabel)
+                .font(.system(size: 9, weight: .bold))
+                .tracking(1.8)
+                .foregroundStyle(Color.white.opacity(0.42))
+
+            // 大数字
+            HStack(alignment: .firstTextBaseline, spacing: 2) {
+                Text("¥")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(Color.white.opacity(0.72))
+                Text(hideBalance ? "· · · · ·" : formatNumber(totalValueCNY))
+                    .font(.system(size: 34, weight: .bold, design: .rounded))
+                    .kerning(-0.8)
+                    .monospacedDigit()
+                    .foregroundStyle(.white)
+                    .accessibilityLabel(totalValueCNY.accessibilityAmountLabel(prefix: "账户总值", hidden: hideBalance))
+            }
+            .padding(.top, 2)
+
+            Spacer(minLength: 0)
+
+            // 底部账户名
+            Text(account.name)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(Color.white.opacity(0.58))
+                .lineLimit(1)
         }
-        return parts.joined(separator: " · ")
+    }
+
+    /// 金色 EMV chip 装饰(纯视觉)
+    private var emvChip: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 0.92, green: 0.74, blue: 0.46),
+                            Color(red: 0.62, green: 0.42, blue: 0.22)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+            // chip 表面纹路 — 3 横线 + 1 竖线
+            VStack(spacing: 2) {
+                ForEach(0..<3) { _ in
+                    Color.black.opacity(0.18).frame(height: 0.7)
+                }
+            }
+            .padding(.horizontal, 3)
+            Rectangle()
+                .fill(Color.black.opacity(0.20))
+                .frame(width: 0.7)
+        }
+        .frame(width: 28, height: 20)
+        .overlay(
+            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                .strokeBorder(Color.black.opacity(0.18), lineWidth: 0.5)
+        )
+    }
+
+    /// 账户类型对应的铜色英文 label(Onyx 卡常见的"产品线"标签)
+    private var englishLabel: String {
+        switch account.type {
+        case .cash:           return "CASH ACCOUNT"
+        case .moneyFund:      return "MONEY MARKET"
+        case .fundApp:        return "FUND ACCOUNT"
+        case .brokerA:        return "BROKERAGE · A"
+        case .brokerHK:       return "BROKERAGE · HK"
+        case .brokerUS:       return "BROKERAGE · US"
+        case .brokerHKUS:     return "BROKERAGE"
+        case .goldDeposit:    return "GOLD DEPOSIT"
+        case .goldPhysical:   return "GOLD VAULT"
+        }
+    }
+
+    /// BALANCE 子标签 — 自动带"折算"提示(多币或非 CNY 单币)
+    private var balanceLabel: String {
+        if hasMultipleCurrencies {
+            return "BALANCE · 含外币 · CNY 折算"
+        }
+        if account.currency != .cny {
+            return "BALANCE · \(account.currency.rawValue) · CNY 折算"
+        }
+        return "BALANCE · CNY"
     }
 
     private var returnsCard: some View {
