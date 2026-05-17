@@ -305,62 +305,94 @@ struct PositionRow: View {
     }
 
     var body: some View {
-        HStack(alignment: .center, spacing: 12) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [iconColor.opacity(0.28), iconColor.opacity(0.10)],
-                            startPoint: .topLeading, endPoint: .bottomTrailing
+        VStack(alignment: .leading, spacing: 14) {
+            // 上半段:身份信息(icon + 资产名 + 代码 / 黄金克数)
+            HStack(alignment: .center, spacing: 12) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [iconColor.opacity(0.28), iconColor.opacity(0.10)],
+                                startPoint: .topLeading, endPoint: .bottomTrailing
+                            )
                         )
-                    )
-                Text(String(position.assetName.prefix(1)))
-                    .font(.system(size: 17, weight: .bold))
-                    .foregroundStyle(iconColor)
+                    Text(String(position.assetName.prefix(1)))
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundStyle(iconColor)
+                }
+                .frame(width: 40, height: 40)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(position.assetName)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(subtitle)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.tertiary)
+                        .monospacedDigit()
+                }
+                Spacer(minLength: 0)
             }
-            .frame(width: 40, height: 40)
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(position.assetName)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(.primary)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
-                Text(subtitle)
-                    .font(.system(size: 11))
-                    .foregroundStyle(.tertiary)
-                    .monospacedDigit()
-            }
-
-            Spacer(minLength: 8)
-
-            VStack(alignment: .trailing, spacing: 4) {
-                Text(hideBalance ? kHiddenAmountMask : "\(currency.symbol)\(formatValue(position.marketValue))")
-                    .font(.system(size: 15, weight: .bold))
-                    .monospacedDigit()
-                    .lineLimit(1)
-                cumulativeRow
+            // 下半段:2 行 metric,显式标签 + 右对齐数字
+            VStack(spacing: 10) {
+                metricRow(
+                    label: "持仓金额",
+                    value: hideBalance ? kHiddenAmountMask : "\(currency.symbol)\(formatValue(position.marketValue))",
+                    valueColor: .primary,
+                    valueWeight: .bold
+                )
+                metricRow(
+                    label: "累计盈亏",
+                    value: cumulativeText,
+                    valueColor: Color.pnlColor(position.unrealizedPnL),
+                    valueWeight: .semibold,
+                    leadingIcon: cumulativeArrow
+                )
             }
         }
     }
 
-    /// 累计盈亏:箭头 + ¥金额 + 百分比,同色(红涨绿跌)。
-    @ViewBuilder
-    private var cumulativeRow: some View {
+    private var cumulativeText: String {
+        if hideBalance { return "¥····  ··%" }
         let pnl = position.unrealizedPnL
         let pct = position.unrealizedPnLPercent
-        let isUp = pnl >= 0
-        HStack(spacing: 3) {
-            Image(systemName: isUp ? "arrow.up.right" : "arrow.down.right")
-                .font(.system(size: 9, weight: .bold))
-            Text(hideBalance ? "¥····" : "\(isUp ? "+" : "-")\(currency.symbol)\(formatValue(abs(pnl)))")
-                .font(.system(size: 11, weight: .semibold))
-                .monospacedDigit()
-            Text(hideBalance ? "··%" : String(format: "%+.2f%%", pct))
-                .font(.system(size: 11))
-                .monospacedDigit()
+        let sign = pnl >= 0 ? "+" : "-"
+        return "\(sign)\(currency.symbol)\(formatValue(abs(pnl))) \(String(format: "%+.2f%%", pct))"
+    }
+
+    private var cumulativeArrow: String {
+        position.unrealizedPnL >= 0 ? "arrow.up.right" : "arrow.down.right"
+    }
+
+    /// 单行 metric:左标签灰 / 右数字带颜色;可选左边箭头。
+    @ViewBuilder
+    private func metricRow(
+        label: String,
+        value: String,
+        valueColor: Color,
+        valueWeight: Font.Weight,
+        leadingIcon: String? = nil
+    ) -> some View {
+        HStack {
+            Text(label)
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+            Spacer()
+            HStack(spacing: 4) {
+                if let icon = leadingIcon {
+                    Image(systemName: icon)
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(valueColor)
+                }
+                Text(value)
+                    .font(.system(size: 14, weight: valueWeight))
+                    .monospacedDigit()
+                    .foregroundStyle(valueColor)
+            }
         }
-        .foregroundStyle(Color.pnlColor(pnl))
     }
 
     private func formatValue(_ v: Double) -> String {
