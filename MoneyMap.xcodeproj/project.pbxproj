@@ -61,7 +61,6 @@
 		400000000000000000000049 /* AmountInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000049 /* AmountInputView.swift */; };
 		40000000000000000000004A /* ToastManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30000000000000000000004A /* ToastManager.swift */; };
 		40000000000000000000004B /* ToastView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30000000000000000000004B /* ToastView.swift */; };
-		40000000000000000000004C /* NicknameOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30000000000000000000004C /* NicknameOnboardingView.swift */; };
 		40000000000000000000004D /* NicknameEditSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30000000000000000000004D /* NicknameEditSheet.swift */; };
 		40000000000000000000004E /* WidgetTutorialSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30000000000000000000004E /* WidgetTutorialSheet.swift */; };
 /* End PBXBuildFile section */
@@ -122,7 +121,6 @@
 		300000000000000000000049 /* AmountInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmountInputView.swift; sourceTree = "<group>"; };
 		30000000000000000000004A /* ToastManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToastManager.swift; sourceTree = "<group>"; };
 		30000000000000000000004B /* ToastView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToastView.swift; sourceTree = "<group>"; };
-		30000000000000000000004C /* NicknameOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NicknameOnboardingView.swift; sourceTree = "<group>"; };
 		30000000000000000000004D /* NicknameEditSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NicknameEditSheet.swift; sourceTree = "<group>"; };
 		30000000000000000000004E /* WidgetTutorialSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetTutorialSheet.swift; sourceTree = "<group>"; };
 		300000000000000000000099 /* MoneyMap.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MoneyMap.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -244,7 +242,6 @@
 				300000000000000000000041 /* MiniSparkline.swift */,
 				300000000000000000000042 /* DonutChart.swift */,
 				30000000000000000000004B /* ToastView.swift */,
-				30000000000000000000004C /* NicknameOnboardingView.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -446,7 +443,6 @@
 				400000000000000000000049 /* AmountInputView.swift in Sources */,
 				40000000000000000000004A /* ToastManager.swift in Sources */,
 				40000000000000000000004B /* ToastView.swift in Sources */,
-				40000000000000000000004C /* NicknameOnboardingView.swift in Sources */,
 				40000000000000000000004D /* NicknameEditSheet.swift in Sources */,
 				40000000000000000000004E /* WidgetTutorialSheet.swift in Sources */,
 			);
