@@ -334,11 +334,33 @@ struct PositionRow: View {
 
             Spacer(minLength: 8)
 
-            Text(hideBalance ? kHiddenAmountMask : "\(currency.symbol)\(formatValue(position.marketValue))")
-                .font(.system(size: 15, weight: .bold))
-                .monospacedDigit()
-                .lineLimit(1)
+            VStack(alignment: .trailing, spacing: 4) {
+                Text(hideBalance ? kHiddenAmountMask : "\(currency.symbol)\(formatValue(position.marketValue))")
+                    .font(.system(size: 15, weight: .bold))
+                    .monospacedDigit()
+                    .lineLimit(1)
+                cumulativeRow
+            }
         }
+    }
+
+    /// 累计盈亏:箭头 + ¥金额 + 百分比,同色(红涨绿跌)。
+    @ViewBuilder
+    private var cumulativeRow: some View {
+        let pnl = position.unrealizedPnL
+        let pct = position.unrealizedPnLPercent
+        let isUp = pnl >= 0
+        HStack(spacing: 3) {
+            Image(systemName: isUp ? "arrow.up.right" : "arrow.down.right")
+                .font(.system(size: 9, weight: .bold))
+            Text(hideBalance ? "¥····" : "\(isUp ? "+" : "-")\(currency.symbol)\(formatValue(abs(pnl)))")
+                .font(.system(size: 11, weight: .semibold))
+                .monospacedDigit()
+            Text(hideBalance ? "··%" : String(format: "%+.2f%%", pct))
+                .font(.system(size: 11))
+                .monospacedDigit()
+        }
+        .foregroundStyle(Color.pnlColor(pnl))
     }
 
     private func formatValue(_ v: Double) -> String {
