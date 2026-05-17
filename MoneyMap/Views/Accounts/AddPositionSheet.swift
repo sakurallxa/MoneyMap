@@ -272,7 +272,7 @@ struct AddPositionSheet: View {
                 Text("预估市值")
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.secondary)
-                Text(marketValue > 0 ? "¥\(formatCNY(marketValue))" : "¥ — ")
+                Text(marketValue > 0 ? formatCNY(marketValue) : "¥ — ")
                     .font(.system(size: 20, weight: .bold, design: .rounded))
                     .monospacedDigit()
                     .foregroundStyle(.primary)

@@ -23,7 +23,7 @@ struct DCAPlansView: View {
 
     private var navSubtitle: String {
         if plans.isEmpty { return "尚未创建定投" }
-        return "\(plans.count) 个计划 · 每月 ¥\(CurrencyFormatter.cnyString(monthlyEstimate))"
+        return "\(plans.count) 个计划 · 每月 \(CurrencyFormatter.cnyString(monthlyEstimate))"
     }
 
     var body: some View {
@@ -234,7 +234,7 @@ struct DCAPlanCard: View {
 
             // 3 列 metric
             HStack(spacing: 8) {
-                metricCell(label: "每次", value: "¥\(CurrencyFormatter.cnyString(plan.amount))", danger: false)
+                metricCell(label: "每次", value: CurrencyFormatter.cnyString(plan.amount), danger: false)
                 metricCell(label: "频率", value: frequencyLabel, danger: false)
                 metricCell(label: overdue ? "已逾期" : "下次", value: nextLabel, danger: overdue)
             }
