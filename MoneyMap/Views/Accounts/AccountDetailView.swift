@@ -344,27 +344,37 @@ struct PositionRow: View {
                     valueColor: .primary,
                     valueWeight: .bold
                 )
-                metricRow(
-                    label: "累计盈亏",
-                    value: cumulativeText,
-                    valueColor: Color.pnlColor(position.unrealizedPnL),
-                    valueWeight: .semibold,
-                    leadingIcon: cumulativeArrow
-                )
+                cumulativeMetricRow
             }
         }
     }
 
-    private var cumulativeText: String {
-        if hideBalance { return "¥····  ··%" }
+    /// 累计盈亏专用行 — ¥ 与 % 拆成 2 个 Text,中间 10pt 间距,避免挤在一起。
+    private var cumulativeMetricRow: some View {
         let pnl = position.unrealizedPnL
         let pct = position.unrealizedPnLPercent
-        let sign = pnl >= 0 ? "+" : "-"
-        return "\(sign)\(currency.symbol)\(formatValue(abs(pnl))) \(String(format: "%+.2f%%", pct))"
-    }
-
-    private var cumulativeArrow: String {
-        position.unrealizedPnL >= 0 ? "arrow.up.right" : "arrow.down.right"
+        let color = Color.pnlColor(pnl)
+        let isUp = pnl >= 0
+        return HStack {
+            Text("累计盈亏")
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+            Spacer()
+            HStack(spacing: 4) {
+                Image(systemName: isUp ? "arrow.up.right" : "arrow.down.right")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(color)
+                Text(hideBalance ? "¥····" : "\(isUp ? "+" : "-")\(currency.symbol)\(formatValue(abs(pnl)))")
+                    .font(.system(size: 14, weight: .semibold))
+                    .monospacedDigit()
+                    .foregroundStyle(color)
+                Text(hideBalance ? "··%" : String(format: "%+.2f%%", pct))
+                    .font(.system(size: 13, weight: .medium))
+                    .monospacedDigit()
+                    .foregroundStyle(color.opacity(0.85))
+                    .padding(.leading, 6)
+            }
+        }
     }
 
     /// 单行 metric:左标签灰 / 右数字带颜色;可选左边箭头。
