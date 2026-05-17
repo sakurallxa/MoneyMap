@@ -222,7 +222,25 @@ struct AccountDetailView: View {
             )
             .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
 
-            // 5. 内容
+            // 5. 右下暗金波纹(guilloche 风)
+            HeroWaves(waveCount: 9, amplitude: 7, wavelength: 95, phaseStep: 0.32)
+                .stroke(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 0.85, green: 0.66, blue: 0.40, opacity: 0.85),
+                            Color(red: 0.78, green: 0.58, blue: 0.32, opacity: 0.30),
+                            Color(red: 0.78, green: 0.58, blue: 0.32, opacity: 0.0)
+                        ],
+                        startPoint: .trailing,
+                        endPoint: .leading
+                    ),
+                    lineWidth: 1.0
+                )
+                .frame(width: 240, height: 130)
+                .offset(x: 150, y: 70)
+                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+
+            // 6. 内容
             heroContent
                 .padding(22)
         }
@@ -546,5 +564,32 @@ struct PositionRow: View {
         f.minimumFractionDigits = 2
         f.maximumFractionDigits = 2
         return f.string(from: NSNumber(value: v)) ?? "0.00"
+    }
+}
+
+/// Hero 卡片右下角的 guilloche 风波纹 — 多条平行 sin 波,每条相位错开。
+struct HeroWaves: Shape {
+    var waveCount: Int = 7
+    var amplitude: CGFloat = 6
+    var wavelength: CGFloat = 90
+    /// 每条波相对上一条的相位偏移(产生交错感)
+    var phaseStep: CGFloat = 0.35
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let spacing = rect.height / CGFloat(waveCount + 1)
+        let steps = 60
+        for i in 0..<waveCount {
+            let baseY = spacing * CGFloat(i + 1)
+            let phase = phaseStep * CGFloat(i)
+            path.move(to: CGPoint(x: 0, y: baseY))
+            for s in 1...steps {
+                let x = rect.width * CGFloat(s) / CGFloat(steps)
+                let theta = (x / wavelength) * .pi * 2 + phase * .pi
+                let y = baseY + sin(theta) * amplitude
+                path.addLine(to: CGPoint(x: x, y: y))
+            }
+        }
+        return path
     }
 }
