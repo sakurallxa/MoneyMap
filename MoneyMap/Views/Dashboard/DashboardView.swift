@@ -92,6 +92,8 @@ struct DashboardView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 14) {
+                    headerRow
+
                     HeroPnLCard(
                         totalAssetsCNY: breakdown.total,
                         totalPnL: totalPnL,
@@ -119,47 +121,50 @@ struct DashboardView: View {
                     Spacer(minLength: 24)
                 }
                 .padding(.horizontal, 14)
-                .padding(.top, 4)
+                .padding(.top, 8)
             }
             .background(Theme.Palette.pageBgWarm.ignoresSafeArea())
-            .navigationTitle("钱袋")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Text(greeting)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    HStack(spacing: 12) {
-                        Button {
-                            withAnimation { hideBalance.toggle() }
-                        } label: {
-                            Image(systemName: hideBalance ? "eye.slash" : "eye")
-                                .font(.body)
-                                .foregroundStyle(.secondary)
-                        }
-                        .accessibilityLabel("切换余额显示")
-                        .accessibilityValue(hideBalance ? "已隐藏" : "已显示")
-                        Button {
-                            Task { await refresh() }
-                        } label: {
-                            Image(systemName: "arrow.clockwise")
-                                .font(.body)
-                                .foregroundStyle(.secondary)
-                                .rotationEffect(.degrees(isRefreshing ? 360 : 0))
-                                .animation(isRefreshing ?
-                                           .linear(duration: 1).repeatForever(autoreverses: false) : .default,
-                                           value: isRefreshing)
-                        }
-                        .disabled(isRefreshing)
-                    }
-                }
-            }
+            .navigationBarHidden(true)
             .refreshable {
                 await refresh()
             }
         }
+    }
+
+    /// 顶部:钱袋 + 问候 + 隐藏余额 + 刷新,与 hero 卡片左右对齐。
+    private var headerRow: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Text("钱袋")
+                .font(.system(size: 32, weight: .bold))
+                .foregroundStyle(.primary)
+            Text(greeting)
+                .font(.system(size: 14))
+                .foregroundStyle(.secondary)
+            Spacer()
+            Button {
+                withAnimation { hideBalance.toggle() }
+            } label: {
+                Image(systemName: hideBalance ? "eye.slash" : "eye")
+                    .font(.system(size: 17))
+                    .foregroundStyle(.secondary)
+            }
+            .accessibilityLabel("切换余额显示")
+            .accessibilityValue(hideBalance ? "已隐藏" : "已显示")
+            Button {
+                Task { await refresh() }
+            } label: {
+                Image(systemName: "arrow.clockwise")
+                    .font(.system(size: 17))
+                    .foregroundStyle(.secondary)
+                    .rotationEffect(.degrees(isRefreshing ? 360 : 0))
+                    .animation(isRefreshing
+                               ? .linear(duration: 1).repeatForever(autoreverses: false)
+                               : .default,
+                               value: isRefreshing)
+            }
+            .disabled(isRefreshing)
+        }
+        .padding(.horizontal, 4)
     }
 
     @AppStorage("userNickname") private var userNickname: String = ""

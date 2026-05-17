@@ -60,7 +60,7 @@ struct HeroPnLCard: View {
                 Circle()
                     .fill(redOrGreen)
                     .frame(width: 6, height: 6)
-                Text("财富快照")
+                Text("总资产")
                     .font(.system(size: 11, weight: .semibold))
                     .kerning(1.6)
                     .foregroundStyle(Color.white.opacity(0.72))
@@ -75,25 +75,19 @@ struct HeroPnLCard: View {
     // MARK: - 大数字:总资产
 
     private var heroNumber: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text("¥")
-                    .font(.system(size: 24, weight: .bold))
-                    .foregroundStyle(Color.white.opacity(0.7))
-                Text(hideBalance ? "· · · · ·" : formatNumber(totalAssetsCNY))
-                    .font(.system(size: 50, weight: .bold, design: .rounded))
-                    .kerning(-2)
-                    .foregroundStyle(.white)
-                    .monospacedDigit()
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.55)
-            }
-            .accessibilityLabel(totalAssetsCNY.accessibilityAmountLabel(prefix: "总资产", hidden: hideBalance))
-
-            Text("总资产")
-                .font(.system(size: 12))
-                .foregroundStyle(Color.white.opacity(0.55))
+        HStack(alignment: .firstTextBaseline, spacing: 4) {
+            Text("¥")
+                .font(.system(size: 24, weight: .bold))
+                .foregroundStyle(Color.white.opacity(0.7))
+            Text(hideBalance ? "· · · · ·" : formatNumber(totalAssetsCNY))
+                .font(.system(size: 50, weight: .bold, design: .rounded))
+                .kerning(-2)
+                .foregroundStyle(.white)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.55)
         }
+        .accessibilityLabel(totalAssetsCNY.accessibilityAmountLabel(prefix: "总资产", hidden: hideBalance))
     }
 
     // MARK: - 2 格 metric
@@ -119,7 +113,7 @@ struct HeroPnLCard: View {
                 Text(hideBalance ? "· · · ·" : formatNumber(abs(totalPnL)))
                     .font(.system(size: 22, weight: .heavy, design: .rounded))
                     .kerning(-0.5)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(redOrGreen)
                     .monospacedDigit()
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
@@ -166,11 +160,11 @@ struct HeroPnLCard: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
 
-            Text(annualizedFootnote)
-                .font(.system(size: 11))
-                .foregroundStyle(Color.white.opacity(0.45))
-                .lineLimit(1)
-                .minimumScaleFactor(0.85)
+            // 空占位,保证左右两格高度一致
+            Text(" ")
+                .font(.system(size: 12, weight: .bold))
+                .monospacedDigit()
+                .opacity(0)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
@@ -202,16 +196,6 @@ struct HeroPnLCard: View {
             return "刚刚更新 \(lastRefreshLabel)"
         }
         return ""
-    }
-
-    /// 年化下方的注脚 — 持有不足 30 天时提示当前是累计值。
-    private var annualizedFootnote: String {
-        guard let earliest = earliestDate else { return "等待投资数据" }
-        let days = Calendar.current.dateComponents([.day], from: earliest, to: Date()).day ?? 0
-        if days < 30 {
-            return "持有 \(days) 天 · 暂同累计"
-        }
-        return "按持有时长折算"
     }
 
     private func formatNumber(_ v: Double) -> String {
