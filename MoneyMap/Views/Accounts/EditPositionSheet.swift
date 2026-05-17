@@ -71,7 +71,12 @@ struct EditPositionSheet: View {
         position.shares = Double(sharesText) ?? 0
         position.avgCost = Double(avgCostText) ?? 0
         position.updatedAt = Date()
-        try? context.save()
-        dismiss()
+        do {
+            try context.save()
+            ToastManager.shared.success("已保存持仓")
+            dismiss()
+        } catch {
+            ToastManager.shared.error("保存失败", subtitle: error.localizedDescription)
+        }
     }
 }

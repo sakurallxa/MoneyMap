@@ -25,6 +25,15 @@ struct TransactionFormView: View {
     @State private var note: String = ""
     @State private var fetchTask: Task<Void, Never>? = nil
     @State private var isFetching = false
+    @State private var lockedField: LockedTriangleField = .amount
+    @FocusState private var focusedField: TriangleField?
+
+    enum LockedTriangleField {
+        case amount, shares, price
+    }
+    enum TriangleField: Hashable {
+        case amount, shares, price
+    }
 
     private var cashAccounts: [Account] {
         accounts.filter { $0.type == .cash || $0.type == .moneyFund }
@@ -104,6 +113,16 @@ struct TransactionFormView: View {
                         .font(.system(size: 15, weight: .semibold))
                 }
             }
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button {
+                    focusedField = nil
+                } label: {
+                    Text("完成")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(Theme.Palette.accentDark)
+                }
+            }
         }
         .onAppear {
             autoSelectDefaults()
@@ -120,12 +139,6 @@ struct TransactionFormView: View {
                     sharesText = String(format: "%.4f", amountValue / priceValue)
                 }
             }
-        }
-        .onChange(of: amountText) { _, _ in
-            recalcShares()
-        }
-        .onChange(of: priceText) { _, _ in
-            recalcShares()
         }
     }
 
@@ -190,11 +203,6 @@ struct TransactionFormView: View {
         }
     }
 
-    private func recalcShares() {
-        if priceValue > 0, amountValue > 0 {
-            sharesText = String(format: "%.4f", amountValue / priceValue)
-        }
-    }
 
     @ViewBuilder
     private var typeHero: some View {
@@ -455,21 +463,21 @@ struct TransactionFormView: View {
         VStack(spacing: 0) {
             switch type {
             case .buyExisting, .sell:
-                fieldRow("交易价格", value: $priceText, suffix: "¥/份", placeholder: "0.0000")
-                Divider().opacity(0.4).padding(.leading, 18)
-                fieldRow("份额(自动算)", value: $sharesText, suffix: "份", placeholder: "0.00", readOnly: true)
+                triangleCard
+                triangleHintRow
                 Divider().opacity(0.4).padding(.leading, 18)
                 dateField
                 Divider().opacity(0.4).padding(.leading, 18)
                 noteField
             case .buyNew:
-                fieldRow("份额(自动算)", value: $sharesText, suffix: "份", placeholder: "0.00", readOnly: true)
+                triangleCard
+                triangleHintRow
                 Divider().opacity(0.4).padding(.leading, 18)
                 dateField
                 Divider().opacity(0.4).padding(.leading, 18)
                 noteField
             case .dividend:
-                fieldRow("每股分红", value: $dividendPerShare, suffix: "¥/份", placeholder: "0.0000")
+                singleFieldRow(label: "每股分红", value: $dividendPerShare, suffix: "¥/份", placeholder: "0.0000")
                 Divider().opacity(0.4).padding(.leading, 18)
                 dateField
                 Divider().opacity(0.4).padding(.leading, 18)
@@ -487,7 +495,118 @@ struct TransactionFormView: View {
         .cardElevation()
     }
 
-    private func fieldRow(_ label: String, value: Binding<String>, suffix: String, placeholder: String, readOnly: Bool = false) -> some View {
+    /// 三角联动卡:金额 / 份额 / 价格 三选一手动,其他自动重算
+    private var triangleCard: some View {
+        VStack(spacing: 0) {
+            triangleRow(
+                field: .amount,
+                label: "金额",
+                text: $amountText,
+                suffix: "¥",
+                placeholder: "0.00",
+                hint: "金额 = 份额 × 当前价"
+            )
+            Divider().opacity(0.4).padding(.leading, 18)
+            triangleRow(
+                field: .shares,
+                label: "份额",
+                text: $sharesText,
+                suffix: "份",
+                placeholder: "0.00",
+                hint: "份额 = 金额 ÷ 当前价"
+            )
+            Divider().opacity(0.4).padding(.leading, 18)
+            triangleRow(
+                field: .price,
+                label: "当前价",
+                text: $priceText,
+                suffix: "¥/份",
+                placeholder: "0.0000",
+                hint: "自动从行情同步 · 可手动覆盖"
+            )
+        }
+    }
+
+    private func triangleRow(field: TriangleField, label: String, text: Binding<String>, suffix: String, placeholder: String, hint: String) -> some View {
+        let locked = isLocked(field)
+        return HStack(alignment: .center, spacing: 10) {
+            // accent 左竖条 (仅 locked)
+            Rectangle()
+                .fill(locked ? Theme.Palette.accent : Color.clear)
+                .frame(width: 3, height: 36)
+                .clipShape(Capsule())
+
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 6) {
+                    Text(label)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(locked ? .primary : .secondary)
+                    if locked {
+                        Text("手动")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(Theme.Palette.accentDark)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 1)
+                            .background(Theme.Palette.accent.opacity(0.18))
+                            .clipShape(Capsule())
+                    } else {
+                        HStack(spacing: 2) {
+                            Image(systemName: "arrow.triangle.2.circlepath")
+                                .font(.system(size: 8, weight: .bold))
+                            Text("自动")
+                                .font(.system(size: 9, weight: .bold))
+                        }
+                        .foregroundStyle(.tertiary)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1)
+                        .background(Color.black.opacity(0.05))
+                        .clipShape(Capsule())
+                    }
+                }
+                Text(hint)
+                    .font(.system(size: 10))
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(1)
+            }
+
+            Spacer()
+
+            HStack(spacing: 1) {
+                TextField(placeholder, text: text)
+                    .keyboardType(.decimalPad)
+                    .multilineTextAlignment(.trailing)
+                    .font(.system(size: 16, weight: .semibold))
+                    .monospacedDigit()
+                    .foregroundStyle(locked ? .primary : .secondary)
+                    .focused($focusedField, equals: field)
+                    .onChange(of: text.wrappedValue) { _, _ in
+                        if focusedField == field {
+                            handleTriangleChange(field: field)
+                        }
+                    }
+                    .onTapGesture {
+                        setLocked(field)
+                    }
+                Text(suffix)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(locked ? Theme.Palette.accent.opacity(0.05) : Color.clear)
+    }
+
+    private var triangleHintRow: some View {
+        Text("点击任意字段 → 该字段变为「手动」,其余两个自动重算")
+            .font(.system(size: 10))
+            .foregroundStyle(.tertiary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 10)
+    }
+
+    private func singleFieldRow(label: String, value: Binding<String>, suffix: String, placeholder: String) -> some View {
         HStack {
             Text(label)
                 .font(.system(size: 14))
@@ -497,14 +616,57 @@ struct TransactionFormView: View {
                 .multilineTextAlignment(.trailing)
                 .font(.system(size: 15, weight: .semibold))
                 .monospacedDigit()
-                .disabled(readOnly)
-                .foregroundStyle(readOnly ? .secondary : .primary)
             Text(suffix)
                 .font(.system(size: 12))
                 .foregroundStyle(.tertiary)
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 14)
+    }
+
+    private func isLocked(_ field: TriangleField) -> Bool {
+        switch (lockedField, field) {
+        case (.amount, .amount), (.shares, .shares), (.price, .price): return true
+        default: return false
+        }
+    }
+
+    private func setLocked(_ field: TriangleField) {
+        switch field {
+        case .amount: lockedField = .amount
+        case .shares: lockedField = .shares
+        case .price: lockedField = .price
+        }
+    }
+
+    /// 三角联动:lockedField 不变,其他两个 try recompute
+    private func handleTriangleChange(field: TriangleField) {
+        setLocked(field)
+        let amount = Double(amountText) ?? 0
+        let shares = Double(sharesText) ?? 0
+        let price = Double(priceText) ?? 0
+        switch field {
+        case .amount:
+            // 用户改了金额:有 price → 重算 shares;否则若有 shares → 重算 price
+            if price > 0 {
+                sharesText = String(format: "%.4f", amount / price)
+            } else if shares > 0 && amount > 0 {
+                priceText = String(format: "%.4f", amount / shares)
+            }
+        case .shares:
+            if price > 0 {
+                amountText = String(format: "%.2f", shares * price)
+            } else if amount > 0 && shares > 0 {
+                priceText = String(format: "%.4f", amount / shares)
+            }
+        case .price:
+            // 用户改了价格:优先保留份额,重算金额;否则保留金额,重算份额
+            if shares > 0 {
+                amountText = String(format: "%.2f", shares * price)
+            } else if amount > 0 && price > 0 {
+                sharesText = String(format: "%.4f", amount / price)
+            }
+        }
     }
 
     private var dateField: some View {
@@ -736,7 +898,24 @@ struct TransactionFormView: View {
             )
             context.insert(tx)
         }
-        try? context.save()
-        onSave()
+        do {
+            try context.save()
+            ToastManager.shared.success(savedToastTitle)
+            onSave()
+        } catch {
+            ToastManager.shared.error("保存失败", subtitle: error.localizedDescription)
+        }
+    }
+
+    private var savedToastTitle: String {
+        switch type {
+        case .buyExisting: return "已加仓"
+        case .buyNew: return "已建仓"
+        case .sell: return "已卖出"
+        case .dividend: return "已记一笔分红"
+        case .deposit: return "已入金"
+        case .withdraw: return "已出金"
+        case .transfer: return "已转账"
+        }
     }
 }

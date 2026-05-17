@@ -75,7 +75,12 @@ struct EditAccountSheet: View {
         account.cashBalance = Double(cashBalanceText) ?? 0
         account.note = note.trimmingCharacters(in: .whitespaces)
         account.updatedAt = Date()
-        try? context.save()
-        dismiss()
+        do {
+            try context.save()
+            ToastManager.shared.success("已保存账户")
+            dismiss()
+        } catch {
+            ToastManager.shared.error("保存失败", subtitle: error.localizedDescription)
+        }
     }
 }

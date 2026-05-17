@@ -1,6 +1,10 @@
 import SwiftUI
 import SwiftData
 
+enum CodeFetchStatus {
+    case idle, loading, success, failure
+}
+
 struct AddPositionSheet: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
@@ -11,7 +15,7 @@ struct AddPositionSheet: View {
     @State private var sharesText = ""
     @State private var avgCostText = ""
     @State private var lastPriceText = ""
-    @State private var isFetching = false
+    @State private var status: CodeFetchStatus = .idle
     @State private var fetchTask: Task<Void, Never>?
     @FocusState private var focusedField: Field?
 
@@ -20,93 +24,60 @@ struct AddPositionSheet: View {
     private var canSave: Bool {
         !assetCode.trimmingCharacters(in: .whitespaces).isEmpty &&
         !assetName.trimmingCharacters(in: .whitespaces).isEmpty &&
-        Double(sharesText) ?? 0 > 0
+        (Double(sharesText) ?? 0) > 0
     }
 
     private var codePlaceholder: String {
         switch account.type {
         case .fundApp: return "基金代码,如 005827"
-        case .brokerA: return "股票代码,如 600519 或 000001"
+        case .brokerA: return "股票代码,如 600519 / 000001"
         case .brokerHK: return "港股代码,如 00700"
         case .brokerUS: return "美股代码,如 AAPL"
-        case .brokerHKUS: return "如 0700.HK 或 AAPL.US"
-        case .goldDeposit: return "如 AU9999 或自定义编码"
-        case .goldPhysical: return "如 GOLDBAR_100G 或自定义"
+        case .goldDeposit: return "如 AU9999 或自定义"
+        case .goldPhysical: return "如 GOLDBAR_100G"
         default: return "资产代码"
         }
     }
 
     private var sharesPlaceholder: String {
-        switch account.type {
-        case .goldDeposit, .goldPhysical: return "必填,单位克"
-        default: return "必填,如 1234.56"
-        }
+        account.type.isGold ? "如 30 克" : "如 1234.56 份"
+    }
+
+    private var sharesLabel: String {
+        account.type.isGold ? "持有克数" : "持有份额/股数"
+    }
+
+    private var marketValue: Double {
+        let shares = Double(sharesText) ?? 0
+        let price = Double(lastPriceText) ?? 0
+        return shares * price
+    }
+
+    private var costBasis: Double {
+        let shares = Double(sharesText) ?? 0
+        let cost = Double(avgCostText) ?? 0
+        return shares * cost
+    }
+
+    private var unrealizedPnL: Double {
+        guard costBasis > 0 else { return 0 }
+        return marketValue - costBasis
     }
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section {
-                    HStack {
-                        Text("所属账户")
-                        Spacer()
-                        Text(account.name)
-                            .foregroundStyle(.secondary)
-                    }
+            ScrollView {
+                VStack(spacing: 16) {
+                    accountTile
+                    assetCard
+                    positionCard
+                    marketValueHighlight
+                    Spacer(minLength: 30)
                 }
-
-                Section("资产信息") {
-                    HStack {
-                        TextField(codePlaceholder, text: $assetCode)
-                            .autocapitalization(.allCharacters)
-                            .focused($focusedField, equals: .code)
-                            .submitLabel(.next)
-                            .onSubmit { focusedField = .shares }
-                        if isFetching {
-                            ProgressView().scaleEffect(0.7)
-                        }
-                    }
-                    TextField("资产名称", text: $assetName)
-                        .focused($focusedField, equals: .name)
-                }
-
-                Section(account.type.isGold ? "持有克数" : "持仓数量") {
-                    HStack {
-                        Text(account.type.isGold ? "持有克数" : "持有份额/股数")
-                        Spacer()
-                        TextField(sharesPlaceholder, text: $sharesText)
-                            .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.trailing)
-                            .focused($focusedField, equals: .shares)
-                    }
-                }
-
-                Section(account.type.isGold ? "当前金价" : "当前价格") {
-                    HStack {
-                        Text(account.type.isGold ? "金价(¥/克)" : "当前净值/股价")
-                        Spacer()
-                        TextField("自动获取", text: $lastPriceText)
-                            .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.trailing)
-                            .focused($focusedField, equals: .price)
-                    }
-                }
-
-                Section {
-                    HStack {
-                        Text("平均持仓成本")
-                        Spacer()
-                        TextField("可留空", text: $avgCostText)
-                            .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.trailing)
-                            .focused($focusedField, equals: .avgCost)
-                    }
-                } header: {
-                    Text("成本价(选填)")
-                } footer: {
-                    Text("买入这只资产时的平均价,用于算「累计浮盈」。\n• 支付宝:基金详情 → 持有 → 成本价\n• 天天基金/蛋卷:持仓详情里的「持仓成本价」\n• 券商 App:通常叫「持仓均价」或「成本价」")
-                }
+                .padding(.horizontal, 14)
+                .padding(.top, 8)
             }
+            .background(Theme.Palette.pageBgWarm.ignoresSafeArea())
             .navigationTitle("添加持仓")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -114,33 +85,250 @@ struct AddPositionSheet: View {
                     Button("取消") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("保存") { save() }
-                        .disabled(!canSave)
+                    Button("保存") { save() }.disabled(!canSave)
                 }
             }
-            .onChange(of: assetCode) { _, newValue in
-                scheduleFetch(for: newValue)
+            .onChange(of: assetCode) { _, _ in scheduleFetch() }
+        }
+    }
+
+    private var accountTile: some View {
+        HStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color(hex: "#5B8FF9").opacity(0.18))
+                Image(systemName: account.type.iconName)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Color(hex: "#5B8FF9"))
+            }
+            .frame(width: 32, height: 32)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(account.name)
+                    .font(.system(size: 14, weight: .semibold))
+                Text(account.type.displayName)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.tertiary)
+            }
+            Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color(.secondarySystemGroupedBackground))
+        )
+    }
+
+    private var assetCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("资产")
+                .font(.system(size: 11, weight: .bold))
+                .kerning(1.2)
+                .foregroundStyle(.tertiary)
+
+            // 代码行
+            HStack(spacing: 10) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("代码")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.tertiary)
+                    TextField(codePlaceholder, text: $assetCode)
+                        .font(.system(size: 17, weight: .semibold))
+                        .autocapitalization(.allCharacters)
+                        .focused($focusedField, equals: .code)
+                }
+                statusBadge
+            }
+
+            Divider().opacity(0.4)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text("名称")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.tertiary)
+                TextField(assetName.isEmpty ? "等待自动获取 · 或手动填写" : "", text: $assetName)
+                    .font(.system(size: 15))
+                    .focused($focusedField, equals: .name)
+            }
+
+            Divider().opacity(0.4)
+
+            HStack {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(account.type.isGold ? "金价 ¥/克" : "当前价")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.tertiary)
+                    TextField("自动同步", text: $lastPriceText)
+                        .keyboardType(.decimalPad)
+                        .font(.system(size: 15, weight: .semibold))
+                        .monospacedDigit()
+                        .focused($focusedField, equals: .price)
+                }
+                Spacer()
+                if status == .success {
+                    HStack(spacing: 3) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 11))
+                        Text("已同步")
+                            .font(.system(size: 11, weight: .semibold))
+                    }
+                    .foregroundStyle(.green)
+                }
+            }
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color(.secondarySystemGroupedBackground))
+        )
+        .cardElevation()
+    }
+
+    @ViewBuilder
+    private var statusBadge: some View {
+        switch status {
+        case .idle:
+            EmptyView()
+        case .loading:
+            ProgressView().scaleEffect(0.8)
+        case .success:
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 18))
+                .foregroundStyle(.green)
+        case .failure:
+            Button {
+                scheduleFetch()
+            } label: {
+                HStack(spacing: 3) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                    Text("重试")
+                        .font(.system(size: 11))
+                }
+                .foregroundStyle(Color(hex: "#E89B2A"))
             }
         }
     }
 
-    private func scheduleFetch(for code: String) {
+    private var positionCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("持仓信息")
+                .font(.system(size: 11, weight: .bold))
+                .kerning(1.2)
+                .foregroundStyle(.tertiary)
+
+            HStack {
+                Text(sharesLabel)
+                    .font(.system(size: 14))
+                Spacer()
+                TextField(sharesPlaceholder, text: $sharesText)
+                    .keyboardType(.decimalPad)
+                    .multilineTextAlignment(.trailing)
+                    .font(.system(size: 15, weight: .semibold))
+                    .monospacedDigit()
+                    .focused($focusedField, equals: .shares)
+            }
+            Divider().opacity(0.4)
+            HStack {
+                Text("平均成本")
+                    .font(.system(size: 14))
+                Spacer()
+                TextField("可留空", text: $avgCostText)
+                    .keyboardType(.decimalPad)
+                    .multilineTextAlignment(.trailing)
+                    .font(.system(size: 15, weight: .semibold))
+                    .monospacedDigit()
+                    .focused($focusedField, equals: .avgCost)
+            }
+            Text("可留空 · 留空将以当前价作为成本(浮盈 = 0)")
+                .font(.system(size: 11))
+                .foregroundStyle(.tertiary)
+                .padding(.top, 2)
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color(.secondarySystemGroupedBackground))
+        )
+        .cardElevation()
+    }
+
+    private var marketValueHighlight: some View {
+        HStack(spacing: 14) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Theme.Palette.accent.opacity(0.20))
+                Image(systemName: "chart.pie.fill")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(Theme.Palette.accentDark)
+            }
+            .frame(width: 42, height: 42)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text("预估市值")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                Text(marketValue > 0 ? "¥\(formatCNY(marketValue))" : "¥ — ")
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(.primary)
+            }
+
+            Spacer()
+
+            if costBasis > 0 {
+                VStack(alignment: .trailing, spacing: 3) {
+                    Text("累计盈亏")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.tertiary)
+                    Text(CurrencyFormatter.signedCNY(unrealizedPnL))
+                        .font(.system(size: 14, weight: .semibold))
+                        .monospacedDigit()
+                        .foregroundStyle(Color.pnlColor(unrealizedPnL))
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .background(
+            LinearGradient(
+                colors: [Theme.Palette.accent.opacity(0.16), Theme.Palette.accent.opacity(0.06)],
+                startPoint: .topLeading, endPoint: .bottomTrailing
+            )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Theme.Palette.accent.opacity(0.3), lineWidth: 1)
+        )
+    }
+
+    private func formatCNY(_ v: Double) -> String {
+        CurrencyFormatter.cnyString(v)
+    }
+
+    private func scheduleFetch() {
         fetchTask?.cancel()
-        let trimmed = code.trimmingCharacters(in: .whitespaces)
-        // 黄金账户:无需精确代码,只要输入即触发
+        let code = assetCode.trimmingCharacters(in: .whitespaces)
         let minLen = account.type.isGold ? 2 : 4
-        guard trimmed.count >= minLen else { return }
+        guard code.count >= minLen else {
+            status = .idle
+            return
+        }
         fetchTask = Task {
             try? await Task.sleep(nanoseconds: 700_000_000)
             if Task.isCancelled { return }
-            await fetchPrice(for: trimmed)
+            await fetchPrice(for: code)
         }
     }
 
     private func fetchPrice(for codeInput: String) async {
         let code = codeInput.uppercased()
-        await MainActor.run { isFetching = true }
-        defer { Task { @MainActor in isFetching = false } }
+        await MainActor.run { status = .loading }
 
         do {
             let result: PriceQuoteResult
@@ -154,32 +342,35 @@ struct AddPositionSheet: View {
             case .brokerA:
                 result = try await PriceService.fetchAShare(code: code)
             case .brokerHK:
-                let clean = code.replacingOccurrences(of: ".HK", with: "")
-                result = try await PriceService.fetchHKStock(code: clean)
+                let c = code.replacingOccurrences(of: ".HK", with: "")
+                result = try await PriceService.fetchHKStock(code: c)
             case .brokerUS:
-                let clean = code.replacingOccurrences(of: ".US", with: "")
-                result = try await PriceService.fetchUSStock(symbol: clean)
+                let c = code.replacingOccurrences(of: ".US", with: "")
+                result = try await PriceService.fetchUSStock(symbol: c)
             case .brokerHKUS:
                 if code.hasSuffix(".HK") {
-                    let clean = code.replacingOccurrences(of: ".HK", with: "")
-                    result = try await PriceService.fetchHKStock(code: clean)
+                    let c = code.replacingOccurrences(of: ".HK", with: "")
+                    result = try await PriceService.fetchHKStock(code: c)
                 } else {
-                    let clean = code.replacingOccurrences(of: ".US", with: "")
-                    result = try await PriceService.fetchUSStock(symbol: clean)
+                    let c = code.replacingOccurrences(of: ".US", with: "")
+                    result = try await PriceService.fetchUSStock(symbol: c)
                 }
             case .goldDeposit, .goldPhysical:
                 result = try await PriceService.fetchGoldSpotCNYPerGram()
             default:
+                await MainActor.run { status = .failure }
                 return
             }
             await MainActor.run {
                 lastPriceText = String(format: "%.4f", result.price)
-                if assetName.trimmingCharacters(in: .whitespaces).isEmpty, let name = result.assetName, !name.isEmpty {
+                if assetName.trimmingCharacters(in: .whitespaces).isEmpty,
+                   let name = result.assetName, !name.isEmpty {
                     assetName = name
                 }
+                status = .success
             }
         } catch {
-            // 静默失败,用户可手动填
+            await MainActor.run { status = .failure }
         }
     }
 
@@ -195,12 +386,14 @@ struct AddPositionSheet: View {
         default:
             finalCode = code
         }
+        let cost = (Double(avgCostText) ?? 0)
+        let effectiveCost = cost > 0 ? cost : lastPrice  // 留空时用当前价
         let pos = Position(
             account: account,
             assetCode: finalCode,
             assetName: assetName.trimmingCharacters(in: .whitespaces),
             shares: Double(sharesText) ?? 0,
-            avgCost: Double(avgCostText) ?? 0,
+            avgCost: effectiveCost,
             lastPrice: lastPrice,
             prevClosePrice: lastPrice,
             weekAgoPrice: lastPrice,
@@ -208,7 +401,12 @@ struct AddPositionSheet: View {
             yearStartPrice: lastPrice
         )
         context.insert(pos)
-        try? context.save()
-        dismiss()
+        do {
+            try context.save()
+            ToastManager.shared.success("已添加持仓「\(pos.assetName)」")
+            dismiss()
+        } catch {
+            ToastManager.shared.error("保存失败", subtitle: error.localizedDescription)
+        }
     }
 }

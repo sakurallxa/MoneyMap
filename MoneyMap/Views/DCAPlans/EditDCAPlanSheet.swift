@@ -178,7 +178,12 @@ struct EditDCAPlanSheet: View {
         plan.dayOfWeek = dayOfWeek
         plan.dayOfMonth = dayOfMonth
         plan.nextRunDate = nextRunDate
-        try? context.save()
-        dismiss()
+        do {
+            try context.save()
+            ToastManager.shared.success("已保存定投计划")
+            dismiss()
+        } catch {
+            ToastManager.shared.error("保存失败", subtitle: error.localizedDescription)
+        }
     }
 }

@@ -22,6 +22,7 @@ struct TotalAssetsCard: View {
                     .minimumScaleFactor(0.6)
                     .monospacedDigit()
                     .foregroundStyle(.primary)
+                    .accessibilityLabel(totalCNY.accessibilityAmountLabel(prefix: "总资产", hidden: hideBalance))
 
                 HStack(spacing: 4) {
                     Image(systemName: todayDelta >= 0 ? "arrow.up.right" : "arrow.down.right")
@@ -34,6 +35,10 @@ struct TotalAssetsCard: View {
                         .monospacedDigit()
                 }
                 .foregroundStyle(Color.pnlColor(todayDelta))
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(hideBalance
+                    ? "今日盈亏 已隐藏"
+                    : "今日 \(todayDelta.accessibilityAmountLabel(prefix: todayDelta >= 0 ? "盈利" : "亏损")) · \(todayPct.accessibilityPercentLabel())")
 
                 Text("今日")
                     .font(.system(size: 11))

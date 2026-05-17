@@ -28,11 +28,13 @@ struct AmountText: View {
     }
 
     private var displayText: String {
-        if hidden { return "\(prefix)****" }
+        if hidden { return kHiddenAmountMask }
         if showSign {
-            return prefix + (amount >= 0 ? "+" : "") + String(format: "%.2f", amount)
+            let sign = amount >= 0 ? "+" : ""
+            let absText = numberFormatter.string(from: NSNumber(value: abs(amount))) ?? "0.00"
+            return prefix + sign + (amount < 0 ? "-" : "") + absText
         }
-        return prefix + numberFormatter.string(from: NSNumber(value: amount))!
+        return prefix + (numberFormatter.string(from: NSNumber(value: amount)) ?? "0.00")
     }
 
     private var color: Color {

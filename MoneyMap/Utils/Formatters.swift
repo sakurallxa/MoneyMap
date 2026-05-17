@@ -111,6 +111,52 @@ enum DateUtil {
     }
 }
 
+/// 全局统一掩码字符串(hideBalance 启用时显示)。
+/// 5 个全角间隔点 — 视觉上比 `****` 更高级
+let kHiddenAmountMask = "¥ · · · · ·"
+let kHiddenPercentMask = "·· %"
+
+extension Double {
+    /// 货币格式(带千分位 + ¥ + 2 位小数),支持 hideBalance 一键掩码。
+    func formattedCNY(hidden: Bool = false) -> String {
+        hidden ? kHiddenAmountMask : CurrencyFormatter.cnyString(self)
+    }
+
+    /// 带正负号的货币格式。
+    func formattedSignedCNY(hidden: Bool = false) -> String {
+        hidden ? kHiddenAmountMask : CurrencyFormatter.signedCNY(self)
+    }
+
+    /// 百分比格式(带正负号),支持 hideBalance 一键掩码。
+    func formattedPercent(hidden: Bool = false, decimals: Int = 2) -> String {
+        hidden ? kHiddenPercentMask : CurrencyFormatter.percent(self, decimals: decimals)
+    }
+
+    /// VoiceOver 友好的金额读法 — 把 ¥1,234,567.89 读作「123 万 4 千 5 百 67 点 89 元」。
+    /// hideBalance 时返回「已隐藏」。
+    func accessibilityAmountLabel(prefix: String = "金额", hidden: Bool = false) -> String {
+        if hidden { return "\(prefix) 已隐藏" }
+        let n = abs(self)
+        let sign = self < 0 ? "负" : ""
+        let yi = Int(n / 100_000_000)
+        let wan = Int((n.truncatingRemainder(dividingBy: 100_000_000)) / 10_000)
+        let yuan = Int(n.truncatingRemainder(dividingBy: 10_000))
+        var parts: [String] = []
+        if yi > 0 { parts.append("\(yi) 亿") }
+        if wan > 0 { parts.append("\(wan) 万") }
+        if yuan > 0 || parts.isEmpty { parts.append("\(yuan)") }
+        return "\(prefix) \(sign)\(parts.joined(separator: " ")) 元"
+    }
+
+    /// VoiceOver 友好的百分比读法 —「上涨 1 点 23 个百分点」。
+    func accessibilityPercentLabel(hidden: Bool = false) -> String {
+        if hidden { return "涨跌幅 已隐藏" }
+        let abs1 = abs(self)
+        let dir = self > 0 ? "上涨" : (self < 0 ? "下跌" : "持平")
+        return "\(dir) \(String(format: "%.2f", abs1)) 个百分点"
+    }
+}
+
 extension Color {
     static var pnlPositive: Color { Color(hex: "#E63946") }
     static var pnlNegative: Color { Color(hex: "#1B7F47") }

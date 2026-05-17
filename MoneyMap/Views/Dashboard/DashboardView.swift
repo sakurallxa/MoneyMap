@@ -200,6 +200,8 @@ struct DashboardView: View {
                                 .font(.body)
                                 .foregroundStyle(.secondary)
                         }
+                        .accessibilityLabel("切换余额显示")
+                        .accessibilityValue(hideBalance ? "已隐藏" : "已显示")
                         Button {
                             Task { await refresh() }
                         } label: {
@@ -221,15 +223,23 @@ struct DashboardView: View {
         }
     }
 
+    @AppStorage("userNickname") private var userNickname: String = ""
+
     private var greeting: String {
         let hour = Calendar.current.component(.hour, from: Date())
+        let base: String
         switch hour {
-        case 5..<12: return "早上好"
-        case 12..<14: return "中午好"
-        case 14..<18: return "下午好"
-        case 18..<23: return "晚上好"
-        default: return "夜深了"
+        case 5..<12: base = "早上好"
+        case 12..<14: base = "中午好"
+        case 14..<18: base = "下午好"
+        case 18..<23: base = "晚上好"
+        default: base = "夜深了"
         }
+        let trimmed = userNickname.trimmingCharacters(in: .whitespaces)
+        if trimmed.isEmpty || trimmed == "钱袋用户" {
+            return base
+        }
+        return "\(base),\(trimmed)"
     }
 
     private func refresh() async {

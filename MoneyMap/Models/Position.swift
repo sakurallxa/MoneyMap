@@ -61,6 +61,21 @@ final class Position {
         return (marketValue - totalCost) / totalCost * 100
     }
 
+    /// 千分位友好的市值文本(¥123,456.78)
+    var marketValueString: String {
+        CurrencyFormatter.cnyString(marketValue)
+    }
+
+    /// 友好的成本价文本(按资产类型选小数位)
+    var avgCostString: String {
+        switch assetClass {
+        case .gold, .stockA, .stockHK, .stockUS:
+            return String(format: "%@%.2f", effectiveCurrency.symbol, avgCost)
+        default:
+            return String(format: "%@%.4f", effectiveCurrency.symbol, avgCost)
+        }
+    }
+
     var effectiveCurrency: CurrencyCode {
         if assetCode.hasSuffix(".US") { return .usd }
         if assetCode.hasSuffix(".HK") { return .hkd }

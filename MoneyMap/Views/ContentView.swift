@@ -41,7 +41,7 @@ struct ContentView: View {
             SettingsView()
                 .tag(4)
                 .tabItem {
-                    Label("我的", systemImage: "person.crop.circle")
+                    Label("设置", systemImage: "gearshape")
                 }
         }
         .tint(.accentColor)
@@ -53,6 +53,26 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showTargetSheet) {
             TargetAllocationSheet()
+        }
+        .overlay(ToastOverlayView())
+        .sheet(isPresented: $showNicknameOnboarding) {
+            NicknameOnboardingView()
+                .interactiveDismissDisabled(true)
+        }
+        .onAppear {
+            checkFirstLaunchOnboarding()
+        }
+    }
+
+    @State private var showNicknameOnboarding = false
+    @AppStorage("userNickname") private var userNickname: String = ""
+    @AppStorage("didShowNicknameOnboarding") private var didShowOnboarding: Bool = false
+
+    private func checkFirstLaunchOnboarding() {
+        if !didShowOnboarding && userNickname.isEmpty {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                showNicknameOnboarding = true
+            }
         }
     }
 }
