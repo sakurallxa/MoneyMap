@@ -119,14 +119,10 @@ struct HeroPnLCard: View {
                     .minimumScaleFactor(0.7)
             }
 
-            HStack(spacing: 3) {
-                Image(systemName: isUp ? "arrow.up.right" : "arrow.down.right")
-                    .font(.system(size: 10, weight: .bold))
-                Text(hideBalance ? "··%" : String(format: "%+.2f%%", totalPnLPct))
-                    .font(.system(size: 12, weight: .bold))
-                    .monospacedDigit()
-            }
-            .foregroundStyle(redOrGreen)
+            Text(hideBalance ? "··%" : String(format: "%+.2f%%", totalPnLPct))
+                .font(.system(size: 12, weight: .bold))
+                .monospacedDigit()
+                .foregroundStyle(redOrGreen)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)

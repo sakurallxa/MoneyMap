@@ -65,16 +65,15 @@ struct AssetTrendCard: View {
                 Text("今日")
                     .font(.system(size: 11))
                     .foregroundStyle(.tertiary)
-                Image(systemName: todayDelta >= 0 ? "arrow.up.right" : "arrow.down.right")
-                    .font(.system(size: 11, weight: .bold))
                 Text(hideBalance ? "¥····" : (todayDelta >= 0 ? "+" : "-") + "¥\(formatNumber(abs(todayDelta)))")
                     .font(.system(size: 13, weight: .bold))
                     .monospacedDigit()
+                    .foregroundStyle(Color.pnlColor(todayDelta))
                 Text(hideBalance ? "··%" : String(format: "%+.2f%%", todayPct))
                     .font(.system(size: 13, weight: .bold))
                     .monospacedDigit()
+                    .foregroundStyle(Color.pnlColor(todayDelta))
             }
-            .foregroundStyle(Color.pnlColor(todayDelta))
             .accessibilityElement(children: .combine)
             .accessibilityLabel(hideBalance
                 ? "今日盈亏 已隐藏"

@@ -310,9 +310,7 @@ struct AccountRow: View {
     private var subRow: some View {
         if isInvestmentType {
             if hasPositions {
-                HStack(spacing: 3) {
-                    Image(systemName: cumulativePnL >= 0 ? "arrow.up.right" : "arrow.down.right")
-                        .font(.system(size: 10, weight: .bold))
+                HStack(spacing: 4) {
                     Text(hideBalance ? "¥····" : (cumulativePnL >= 0 ? "+" : "-") + "¥\(formatShort(abs(cumulativePnL)))")
                         .font(.system(size: 11, weight: .semibold))
                         .monospacedDigit()

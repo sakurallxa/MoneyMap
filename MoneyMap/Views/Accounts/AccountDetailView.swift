@@ -502,7 +502,8 @@ struct PositionRow: View {
         }
     }
 
-    /// 累计盈亏专用行 — ¥ 与 % 拆成 2 个 Text,中间 10pt 间距,避免挤在一起。
+    /// 累计盈亏专用行 — ¥ 与 % 拆成 2 个 Text,中间 6pt 间距,避免挤在一起。
+    /// 方向已由 +/- 符号表达,不再附加上升/下降箭头(避免冗余)。
     private var cumulativeMetricRow: some View {
         let pnl = position.unrealizedPnL
         let pct = position.unrealizedPnLPercent
@@ -513,10 +514,7 @@ struct PositionRow: View {
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
             Spacer()
-            HStack(spacing: 4) {
-                Image(systemName: isUp ? "arrow.up.right" : "arrow.down.right")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(color)
+            HStack(spacing: 0) {
                 Text(hideBalance ? "¥····" : "\(isUp ? "+" : "-")\(currency.symbol)\(formatValue(abs(pnl)))")
                     .font(.system(size: 14, weight: .semibold))
                     .monospacedDigit()
