@@ -17,20 +17,11 @@ struct NicknameOnboardingView: View {
     @FocusState private var isFocused: Bool
 
     enum Gender: String, CaseIterable {
-        case mister, miss, other
+        case mister, miss
         var displayName: String {
             switch self {
             case .mister: return "先生"
             case .miss:   return "女士"
-            case .other:  return "其他"
-            }
-        }
-        /// 用作昵称后缀。其他 → 空(只用姓)。
-        var suffix: String {
-            switch self {
-            case .mister: return "先生"
-            case .miss:   return "女士"
-            case .other:  return ""
             }
         }
     }
@@ -38,21 +29,7 @@ struct NicknameOnboardingView: View {
     private var nickname: String {
         let s = surname.trimmingCharacters(in: .whitespaces)
         guard !s.isEmpty else { return "" }
-        return s + gender.suffix
-    }
-
-    private var previewGreeting: String {
-        let hour = Calendar.current.component(.hour, from: Date())
-        let base: String
-        switch hour {
-        case 5..<12:  base = "早上好"
-        case 12..<14: base = "中午好"
-        case 14..<18: base = "下午好"
-        case 18..<23: base = "晚上好"
-        default:      base = "夜深了"
-        }
-        let n = nickname
-        return n.isEmpty ? base : "\(base),\(n)"
+        return s + gender.displayName
     }
 
     private var canFinish: Bool {
@@ -235,76 +212,30 @@ struct NicknameOnboardingView: View {
             .padding(.horizontal, 18)
             .padding(.top, 14)
 
-            // person icon
-            staggeredItem(delay: 0.16, appeared: nicknameAppeared) {
-                Image(systemName: "person.crop.circle.fill")
-                    .font(.system(size: 36))
-                    .foregroundStyle(Theme.Palette.accent, Theme.Palette.accent.opacity(0.15))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.leading, 22)
-                    .padding(.top, 16)
-            }
-
             // 标题
-            staggeredItem(delay: 0.22, appeared: nicknameAppeared) {
+            staggeredItem(delay: 0.20, appeared: nicknameAppeared) {
                 Text("如何称呼您?")
                     .font(.system(size: 28, weight: .heavy))
                     .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.leading, 22)
-                    .padding(.top, 14)
+                    .padding(.top, 40)
             }
 
-            // 副说明
-            staggeredItem(delay: 0.30, appeared: nicknameAppeared) {
-                Text("想给您一个专属的问候 · 仅在本地保存,可在「设置」里随时修改。")
-                    .font(.system(size: 13))
-                    .foregroundStyle(.secondary)
-                    .lineSpacing(3)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 22)
-                    .padding(.top, 8)
-            }
-
-            // 称谓 segmented
-            staggeredItem(delay: 0.40, appeared: nicknameAppeared) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("称谓")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(.tertiary)
-                    HStack(spacing: 10) {
-                        ForEach(Gender.allCases, id: \.self) { g in
-                            genderChip(g)
-                        }
-                    }
+            // 姓 + 称谓(单格输入 + segmented)
+            staggeredItem(delay: 0.32, appeared: nicknameAppeared) {
+                HStack(spacing: 14) {
+                    surnameBox
+                    genderSegmented
                 }
                 .padding(.horizontal, 22)
-                .padding(.top, 24)
-            }
-
-            // 姓输入
-            staggeredItem(delay: 0.50, appeared: nicknameAppeared) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("您的姓")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(.tertiary)
-                    surnameInput
-                }
-                .padding(.horizontal, 22)
-                .padding(.top, 18)
-            }
-
-            // 实时问候预览
-            staggeredItem(delay: 0.60, appeared: nicknameAppeared) {
-                previewCard
-                    .padding(.horizontal, 22)
-                    .padding(.top, 18)
+                .padding(.top, 28)
             }
 
             Spacer()
 
             // 完成 CTA
-            staggeredItem(delay: 0.70, appeared: nicknameAppeared) {
+            staggeredItem(delay: 0.50, appeared: nicknameAppeared) {
                 Button {
                     finish()
                 } label: {
@@ -336,64 +267,28 @@ struct NicknameOnboardingView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                 nicknameAppeared = true
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 isFocused = true
             }
         }
     }
 
-    private func genderChip(_ g: Gender) -> some View {
-        let selected = gender == g
-        return Button {
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
-                gender = g
+    /// 单字大小的姓输入框 — accent 边框 + accent 光晕。
+    private var surnameBox: some View {
+        TextField("", text: $surname)
+            .font(.system(size: 36, weight: .heavy))
+            .foregroundStyle(.primary)
+            .multilineTextAlignment(.center)
+            .focused($isFocused)
+            .submitLabel(.done)
+            .onSubmit { finish() }
+            .onChange(of: surname) { _, new in
+                let trimmed = new.trimmingCharacters(in: .whitespaces)
+                if trimmed.count > 1 {
+                    surname = String(trimmed.prefix(1))
+                }
             }
-        } label: {
-            Text(g.displayName)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(selected ? .white : .primary)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .background(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(
-                            selected
-                            ? AnyShapeStyle(
-                                LinearGradient(
-                                    colors: [Theme.Palette.accent, Theme.Palette.accentDark],
-                                    startPoint: .topLeading, endPoint: .bottomTrailing
-                                )
-                            )
-                            : AnyShapeStyle(Color(.secondarySystemGroupedBackground))
-                        )
-                        .shadow(color: selected ? Theme.Palette.accent.opacity(0.35) : .black.opacity(0.04),
-                                radius: selected ? 12 : 4, y: selected ? 6 : 2)
-                )
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var surnameInput: some View {
-        ZStack(alignment: .trailing) {
-            HStack(spacing: 0) {
-                TextField("", text: $surname)
-                    .font(.system(size: 32, weight: .heavy))
-                    .foregroundStyle(.primary)
-                    .focused($isFocused)
-                    .submitLabel(.done)
-                    .onSubmit { finish() }
-                    .onChange(of: surname) { _, new in
-                        // 限制为单字
-                        let trimmed = new.trimmingCharacters(in: .whitespaces)
-                        if trimmed.count > 1 {
-                            surname = String(trimmed.prefix(1))
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 16)
-            .frame(maxWidth: .infinity)
+            .frame(width: 72, height: 72)
             .background(
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
                     .fill(Color(.secondarySystemGroupedBackground))
@@ -403,49 +298,42 @@ struct NicknameOnboardingView: View {
                     .strokeBorder(Theme.Palette.accent.opacity(0.75), lineWidth: 1.5)
             )
             .shadow(color: Theme.Palette.accent.opacity(0.22), radius: 14, y: 4)
-
-            Text("1 个字 · 仅取姓")
-                .font(.system(size: 11))
-                .foregroundStyle(.tertiary)
-                .padding(.trailing, 20)
-        }
     }
 
-    private var previewCard: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "hand.wave.fill")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(Theme.Palette.accentDark)
-                .frame(width: 30, height: 30)
-                .background(
-                    RoundedRectangle(cornerRadius: 9, style: .continuous)
-                        .fill(Theme.Palette.accent.opacity(0.18))
-                )
-            VStack(alignment: .leading, spacing: 2) {
-                Text("首页问候预览")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(.tertiary)
-                Text(previewGreeting)
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(.primary)
-                    .animation(.easeOut(duration: 0.2), value: previewGreeting)
+    /// 先生 / 女士 两段 segmented,跟在 surnameBox 后面。
+    private var genderSegmented: some View {
+        HStack(spacing: 0) {
+            ForEach(Gender.allCases, id: \.self) { g in
+                Button {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
+                        gender = g
+                    }
+                } label: {
+                    Text(g.displayName)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(gender == g ? .white : .primary)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 72)
+                        .background(
+                            gender == g
+                            ? AnyShapeStyle(
+                                LinearGradient(
+                                    colors: [Theme.Palette.accent, Theme.Palette.accentDark],
+                                    startPoint: .topLeading, endPoint: .bottomTrailing
+                                )
+                            )
+                            : AnyShapeStyle(Color.clear)
+                        )
+                }
+                .buttonStyle(.plain)
             }
-            Spacer(minLength: 0)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
-        .frame(maxWidth: .infinity)
         .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Theme.Palette.accent.opacity(0.06))
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color(.secondarySystemGroupedBackground))
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(
-                    Theme.Palette.accent.opacity(0.55),
-                    style: StrokeStyle(lineWidth: 1, dash: [4, 3])
-                )
-        )
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .shadow(color: Theme.Palette.accent.opacity(0.16), radius: 12, y: 4)
     }
 
     // MARK: - 动画 helper
