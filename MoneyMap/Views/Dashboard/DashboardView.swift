@@ -102,10 +102,6 @@ struct DashboardView: View {
         return RebalanceService.overallDeviation(items: items)
     }
 
-    private var recentTxs: [TransactionRecord] {
-        Array(allTxs.prefix(4))
-    }
-
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -136,8 +132,6 @@ struct DashboardView: View {
                         deviationPercent: overallDeviation,
                         hideBalance: hideBalance
                     )
-
-                    recentTransactionsCard
 
                     Spacer(minLength: 24)
                 }
@@ -216,46 +210,6 @@ struct DashboardView: View {
         isRefreshing = false
     }
 
-    private var recentTransactionsCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text("最近")
-                    .font(.system(size: 17, weight: .bold))
-                    .kerning(-0.2)
-                Spacer()
-                Text("全部 ›")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Theme.Palette.accentDark)
-            }
-            .padding(.horizontal, 18)
-            .padding(.top, 14)
-            .padding(.bottom, 4)
-
-            if recentTxs.isEmpty {
-                Text("还没有交易记录")
-                    .font(.subheadline)
-                    .foregroundStyle(.tertiary)
-                    .frame(maxWidth: .infinity, minHeight: 60)
-            } else {
-                VStack(spacing: 0) {
-                    ForEach(Array(recentTxs.enumerated()), id: \.element.id) { idx, tx in
-                        TransactionRow(tx: tx, hideAmount: hideBalance)
-                            .padding(.horizontal, 18)
-                            .padding(.vertical, 12)
-                        if idx < recentTxs.count - 1 {
-                            Divider().opacity(0.4).padding(.leading, 60)
-                        }
-                    }
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(Color(.secondarySystemGroupedBackground))
-        )
-        .cardElevation()
-    }
 }
 
 /// 复用的交易行 — 紧凑版,用在 Dashboard 和 Transactions tab
