@@ -1,16 +1,17 @@
 import SwiftUI
 
-/// 黑金 Hero · 累计盈亏卡片。
-/// 包含: eyebrow + "投资以来"提示 / 50pt 主数字 / 涨跌 pill + 年化 / sparkline / range tabs / 本期变化行
+/// 黑金 Hero · 财富快照卡。
+/// 信息层级:
+///   eyebrow:● 财富快照 · 投资以来 X 起
+///   主数字:总资产 50pt
+///   2 格 metric:左 = 累计盈亏 + 累计%;右 = 年化收益率
 struct HeroPnLCard: View {
+    let totalAssetsCNY: Double
     let totalPnL: Double
     let totalPnLPct: Double
     let annualizedPct: Double
     let earliestDate: Date?
     let lastRefreshLabel: String
-    let sparklineValues: [Double]
-    let periodChange: Double
-    @Binding var range: TrendRange
     var hideBalance: Bool = false
 
     private var isUp: Bool { totalPnL >= 0 }
@@ -39,14 +40,11 @@ struct HeroPnLCard: View {
                 .inset(by: 0.25)
                 .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
 
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 18) {
                 topRow
-                bigNumber
-                metaRow
-                sparkline
-                RangeTabsView(range: $range, dark: true)
-                Divider().overlay(Color.white.opacity(0.08))
-                periodChangeRow
+                heroNumber
+                Divider().overlay(Color.white.opacity(0.10))
+                metricGrid
             }
             .padding(22)
         }
@@ -54,13 +52,15 @@ struct HeroPnLCard: View {
         .shadow(color: .black.opacity(0.22), radius: 36, x: 0, y: 14)
     }
 
+    // MARK: - eyebrow
+
     private var topRow: some View {
         HStack {
             HStack(spacing: 6) {
                 Circle()
                     .fill(redOrGreen)
                     .frame(width: 6, height: 6)
-                Text("累计盈亏")
+                Text("财富快照")
                     .font(.system(size: 11, weight: .semibold))
                     .kerning(1.6)
                     .foregroundStyle(Color.white.opacity(0.72))
@@ -72,83 +72,124 @@ struct HeroPnLCard: View {
         }
     }
 
-    private var bigNumber: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 4) {
-            Text(isUp ? "+¥" : "-¥")
-                .font(.system(size: 24, weight: .bold))
-                .foregroundStyle(Color.white.opacity(0.7))
-            Text(hideBalance ? "· · · · ·" : formatNumber(abs(totalPnL)))
-                .font(.system(size: 50, weight: .bold, design: .rounded))
-                .kerning(-2)
-                .foregroundStyle(.white)
-                .monospacedDigit()
+    // MARK: - 大数字:总资产
+
+    private var heroNumber: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text("¥")
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundStyle(Color.white.opacity(0.7))
+                Text(hideBalance ? "· · · · ·" : formatNumber(totalAssetsCNY))
+                    .font(.system(size: 50, weight: .bold, design: .rounded))
+                    .kerning(-2)
+                    .foregroundStyle(.white)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.55)
+            }
+            .accessibilityLabel(totalAssetsCNY.accessibilityAmountLabel(prefix: "总资产", hidden: hideBalance))
+
+            Text("总资产")
+                .font(.system(size: 12))
+                .foregroundStyle(Color.white.opacity(0.55))
         }
     }
 
-    private var metaRow: some View {
-        HStack {
+    // MARK: - 2 格 metric
+
+    private var metricGrid: some View {
+        HStack(spacing: 12) {
+            cumulativePnLCell
+            annualizedCell
+        }
+    }
+
+    /// 左格 · 累计盈亏 + 累计收益率
+    private var cumulativePnLCell: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("累计盈亏")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Color.white.opacity(0.55))
+
+            HStack(alignment: .firstTextBaseline, spacing: 3) {
+                Text(isUp ? "+¥" : "-¥")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(redOrGreen)
+                Text(hideBalance ? "· · · ·" : formatNumber(abs(totalPnL)))
+                    .font(.system(size: 22, weight: .heavy, design: .rounded))
+                    .kerning(-0.5)
+                    .foregroundStyle(.white)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+
             HStack(spacing: 3) {
                 Image(systemName: isUp ? "arrow.up.right" : "arrow.down.right")
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.system(size: 10, weight: .bold))
                 Text(hideBalance ? "··%" : String(format: "%+.2f%%", totalPnLPct))
                     .font(.system(size: 12, weight: .bold))
                     .monospacedDigit()
             }
             .foregroundStyle(redOrGreen)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 4)
-            .background(redOrGreen.opacity(0.20))
-            .clipShape(Capsule())
-            .overlay(Capsule().stroke(redOrGreen.opacity(0.35), lineWidth: 0.5))
-
-            Spacer()
-
-            HStack(spacing: 4) {
-                Text("年化")
-                    .font(.system(size: 12))
-                    .foregroundStyle(Color.white.opacity(0.55))
-                Text(hideBalance ? "··%" : String(format: "%+.2f%%", annualizedPct))
-                    .font(.system(size: 12, weight: .bold))
-                    .monospacedDigit()
-                    .foregroundStyle(.white)
-            }
         }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color.white.opacity(0.05))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.06), lineWidth: 0.5)
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(hideBalance
+            ? "累计盈亏 已隐藏"
+            : "累计盈亏 \(totalPnL.accessibilityAmountLabel(prefix: isUp ? "盈利" : "亏损")) · \(totalPnLPct.accessibilityPercentLabel())")
     }
 
-    @ViewBuilder
-    private var sparkline: some View {
-        if sparklineValues.count >= 2 {
-            MiniSparkline(
-                values: sparklineValues,
-                lineColor: redOrGreen,
-                fillGradient: Gradient(stops: [
-                    .init(color: redOrGreen.opacity(0.28), location: 0),
-                    .init(color: redOrGreen.opacity(0), location: 1)
-                ]),
-                lineWidth: 2.2,
-                showEndDot: true,
-                glow: true
-            )
-            .frame(height: 78)
-        } else {
-            Color.clear.frame(height: 78)
-        }
-    }
+    /// 右格 · 年化收益率
+    private var annualizedCell: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("年化收益率")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Color.white.opacity(0.55))
 
-    private var periodChangeRow: some View {
-        HStack {
-            Text("\(range.changeLabelPrefix)变化")
-                .font(.system(size: 11))
-                .foregroundStyle(Color.white.opacity(0.5))
-            Spacer()
-            let positive = periodChange >= 0
-            let c: Color = positive ? Theme.Palette.heroAccentRed : Theme.Palette.heroAccentGreen
-            Text(hideBalance ? "¥· · · · ·" : (positive ? "+" : "-") + "¥\(formatNumber(abs(periodChange)))")
-                .font(.system(size: 13, weight: .bold))
+            Text(hideBalance ? "··%" : String(format: "%+.2f%%", annualizedPct))
+                .font(.system(size: 22, weight: .heavy, design: .rounded))
+                .kerning(-0.5)
+                .foregroundStyle(.white)
                 .monospacedDigit()
-                .foregroundStyle(c)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+
+            Text(annualizedFootnote)
+                .font(.system(size: 11))
+                .foregroundStyle(Color.white.opacity(0.45))
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
         }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color.white.opacity(0.05))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.06), lineWidth: 0.5)
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(hideBalance
+            ? "年化收益率 已隐藏"
+            : "年化收益率 \(annualizedPct.accessibilityPercentLabel())")
     }
+
+    // MARK: - helpers
 
     private var refreshLabel: String {
         if let earliestDate = earliestDate {
@@ -161,6 +202,16 @@ struct HeroPnLCard: View {
             return "刚刚更新 \(lastRefreshLabel)"
         }
         return ""
+    }
+
+    /// 年化下方的注脚 — 持有不足 30 天时提示当前是累计值。
+    private var annualizedFootnote: String {
+        guard let earliest = earliestDate else { return "等待投资数据" }
+        let days = Calendar.current.dateComponents([.day], from: earliest, to: Date()).day ?? 0
+        if days < 30 {
+            return "持有 \(days) 天 · 暂同累计"
+        }
+        return "按持有时长折算"
     }
 
     private func formatNumber(_ v: Double) -> String {

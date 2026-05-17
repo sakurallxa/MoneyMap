@@ -53,7 +53,6 @@
 		400000000000000000000041 /* MiniSparkline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000041 /* MiniSparkline.swift */; };
 		400000000000000000000042 /* DonutChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000042 /* DonutChart.swift */; };
 		400000000000000000000043 /* HeroPnLCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000043 /* HeroPnLCard.swift */; };
-		400000000000000000000044 /* TotalAssetsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000044 /* TotalAssetsCard.swift */; };
 		400000000000000000000045 /* AssetTrendCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000045 /* AssetTrendCard.swift */; };
 		400000000000000000000046 /* BreakdownDonutCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000046 /* BreakdownDonutCard.swift */; };
 		400000000000000000000047 /* TransactionTypePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000047 /* TransactionTypePickerView.swift */; };
@@ -113,7 +112,6 @@
 		300000000000000000000041 /* MiniSparkline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniSparkline.swift; sourceTree = "<group>"; };
 		300000000000000000000042 /* DonutChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DonutChart.swift; sourceTree = "<group>"; };
 		300000000000000000000043 /* HeroPnLCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeroPnLCard.swift; sourceTree = "<group>"; };
-		300000000000000000000044 /* TotalAssetsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TotalAssetsCard.swift; sourceTree = "<group>"; };
 		300000000000000000000045 /* AssetTrendCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetTrendCard.swift; sourceTree = "<group>"; };
 		300000000000000000000046 /* BreakdownDonutCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakdownDonutCard.swift; sourceTree = "<group>"; };
 		300000000000000000000047 /* TransactionTypePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionTypePickerView.swift; sourceTree = "<group>"; };
@@ -251,7 +249,6 @@
 			children = (
 				30000000000000000000000E /* DashboardView.swift */,
 				300000000000000000000043 /* HeroPnLCard.swift */,
-				300000000000000000000044 /* TotalAssetsCard.swift */,
 				300000000000000000000045 /* AssetTrendCard.swift */,
 				300000000000000000000046 /* BreakdownDonutCard.swift */,
 			);
@@ -435,7 +432,6 @@
 				400000000000000000000041 /* MiniSparkline.swift in Sources */,
 				400000000000000000000042 /* DonutChart.swift in Sources */,
 				400000000000000000000043 /* HeroPnLCard.swift in Sources */,
-				400000000000000000000044 /* TotalAssetsCard.swift in Sources */,
 				400000000000000000000045 /* AssetTrendCard.swift in Sources */,
 				400000000000000000000046 /* BreakdownDonutCard.swift in Sources */,
 				400000000000000000000047 /* TransactionTypePickerView.swift in Sources */,

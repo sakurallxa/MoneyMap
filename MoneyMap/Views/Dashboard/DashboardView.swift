@@ -13,22 +13,14 @@ struct DashboardView: View {
     @Query(sort: \TargetAllocation.assetClassRaw) private var targets: [TargetAllocation]
 
     @AppStorage("hideBalance") private var hideBalance = false
-    @AppStorage("dashboardPnLRange") private var pnlRangeRaw: String = TrendRange.ytd.rawValue
     @AppStorage("dashboardAssetRange") private var assetRangeRaw: String = TrendRange.month.rawValue
     @State private var lastRefreshLabel = ""
     @State private var isRefreshing = false
 
-    private var pnlRange: TrendRange {
-        get { TrendRange(rawValue: pnlRangeRaw) ?? .ytd }
-    }
     private var assetRange: TrendRange {
         get { TrendRange(rawValue: assetRangeRaw) ?? .month }
     }
 
-    private var pnlRangeBinding: Binding<TrendRange> {
-        Binding(get: { TrendRange(rawValue: pnlRangeRaw) ?? .ytd },
-                set: { pnlRangeRaw = $0.rawValue })
-    }
     private var assetRangeBinding: Binding<TrendRange> {
         Binding(get: { TrendRange(rawValue: assetRangeRaw) ?? .month },
                 set: { assetRangeRaw = $0.rawValue })
@@ -85,49 +77,6 @@ struct DashboardView: View {
         return (pow(m, 1 / years) - 1) * 100
     }
 
-    /// 今日盈亏(基于持仓的昨收/今实时价 × shares × fx)
-    private var todayChange: (delta: Double, pct: Double) {
-        let rmap = rateMap
-        var current = 0.0
-        var prev = 0.0
-        for pos in positions {
-            let fx = rmap[pos.effectiveCurrency.rawValue] ?? 1.0
-            current += pos.shares * pos.lastPrice * fx
-            prev += pos.shares * pos.prevClosePrice * fx
-        }
-        let delta = current - prev
-        let base = prev + cashCNY
-        let pct = base > 0 ? delta / base * 100 : 0
-        return (delta, pct)
-    }
-
-    private var cashCNY: Double {
-        let rmap = rateMap
-        return accounts.reduce(0.0) { sum, acc in
-            sum + acc.cashBalance * (rmap[acc.currency.rawValue] ?? 1.0)
-        }
-    }
-
-    /// 取选定 range 内的 snapshot 用于 Hero sparkline / 走势卡 chart
-    private func snapshotValues(for range: TrendRange) -> [Double] {
-        let sorted = snapshots.sorted { $0.date < $1.date }
-        guard let start = range.startDate else {
-            return sorted.map { $0.totalValueCNY }
-        }
-        return sorted.filter { $0.date >= start }.map { $0.totalValueCNY }
-    }
-
-    /// Hero pnl 在选定 range 内的盈亏变化
-    private var heroPeriodChange: Double {
-        let values = snapshotValues(for: pnlRange)
-        guard let first = values.first, let last = values.last else { return 0 }
-        return last - first
-    }
-
-    /// 总资产 30 天 sparkline
-    private var sparkline30d: [Double] {
-        snapshotValues(for: .month)
-    }
 
     /// 整体偏离度(从 RebalanceService 拿)
     private var overallDeviation: Double {
@@ -144,22 +93,12 @@ struct DashboardView: View {
             ScrollView {
                 VStack(spacing: 14) {
                     HeroPnLCard(
+                        totalAssetsCNY: breakdown.total,
                         totalPnL: totalPnL,
                         totalPnLPct: totalPnLPct,
                         annualizedPct: annualizedPct,
                         earliestDate: earliestTxDate,
                         lastRefreshLabel: lastRefreshLabel,
-                        sparklineValues: snapshotValues(for: pnlRange),
-                        periodChange: heroPeriodChange,
-                        range: pnlRangeBinding,
-                        hideBalance: hideBalance
-                    )
-
-                    TotalAssetsCard(
-                        totalCNY: breakdown.total,
-                        todayDelta: todayChange.delta,
-                        todayPct: todayChange.pct,
-                        sparkline30d: sparkline30d,
                         hideBalance: hideBalance
                     )
 
