@@ -35,18 +35,20 @@ struct EditAccountSheet: View {
                     }
                     Picker("币种", selection: $currency) {
                         ForEach(CurrencyCode.allCases, id: \.self) { c in
-                            Text("\(c.rawValue) \(c.symbol)").tag(c)
+                            Text(c.displayName).tag(c)
                         }
                     }
                 }
 
-                Section {
-                    TextField("0.00", text: $cashBalanceText)
-                        .keyboardType(.decimalPad)
-                } header: {
-                    Text("现金余额")
-                } footer: {
-                    Text("银行卡/活期/货基账户的当前余额。每周/每月对一下账,保持准确。")
+                if !type.isInvestment {
+                    Section {
+                        TextField("0.00", text: $cashBalanceText)
+                            .keyboardType(.decimalPad)
+                    } header: {
+                        Text("当前余额")
+                    } footer: {
+                        Text("银行卡/活期/货基账户的当前余额。每周/每月对一下账,保持准确。")
+                    }
                 }
 
                 Section("备注") {
@@ -72,7 +74,8 @@ struct EditAccountSheet: View {
         account.name = name.trimmingCharacters(in: .whitespaces)
         account.typeRaw = type.rawValue
         account.currencyRaw = currency.rawValue
-        account.cashBalance = Double(cashBalanceText) ?? 0
+        // 投资类账户的余额由持仓决定,强制 0;只有现金/货基才接受手输余额
+        account.cashBalance = type.isInvestment ? 0 : (Double(cashBalanceText) ?? 0)
         account.note = note.trimmingCharacters(in: .whitespaces)
         account.updatedAt = Date()
         do {

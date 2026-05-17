@@ -68,6 +68,15 @@ enum CurrencyCode: String, Codable, CaseIterable {
         case .usd: return "$"
         }
     }
+
+    /// 用户面向的中文名 — 用于 picker / 标签等 UI 展示。
+    var displayName: String {
+        switch self {
+        case .cny: return "人民币"
+        case .hkd: return "港币"
+        case .usd: return "美元"
+        }
+    }
 }
 
 enum AssetType: String, Codable, CaseIterable {

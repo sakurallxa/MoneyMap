@@ -148,26 +148,29 @@ struct AddAccountSheet: View {
                 Spacer()
                 Picker("币种", selection: $currency) {
                     ForEach(CurrencyCode.allCases, id: \.self) { c in
-                        Text(c.rawValue).tag(c)
+                        Text(c.displayName).tag(c)
                     }
                 }
                 .pickerStyle(.segmented)
-                .frame(maxWidth: 200)
+                .frame(maxWidth: 220)
             }
 
-            Divider().opacity(0.4)
+            // 仅现金/货基账户才需要初始余额;投资类账户的余额由持仓决定。
+            if !type.isInvestment {
+                Divider().opacity(0.4)
 
-            HStack {
-                Text("初始余额")
-                    .font(.system(size: 14))
-                Spacer()
-                HStack(spacing: 1) {
-                    Text(currency.symbol)
-                        .foregroundStyle(.secondary)
-                    TextField("0.00", text: $cashBalanceText)
-                        .keyboardType(.decimalPad)
-                        .multilineTextAlignment(.leading)
-                        .fixedSize()
+                HStack {
+                    Text("初始余额")
+                        .font(.system(size: 14))
+                    Spacer()
+                    HStack(spacing: 1) {
+                        Text(currency.symbol)
+                            .foregroundStyle(.secondary)
+                        TextField("0.00", text: $cashBalanceText)
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.leading)
+                            .fixedSize()
+                    }
                 }
             }
         }
@@ -215,7 +218,8 @@ struct AddAccountSheet: View {
     }
 
     private func save() {
-        let balance = Double(cashBalanceText) ?? 0
+        // 投资类账户的初始余额恒为 0(持仓由后续买入/添加生成)
+        let balance = type.isInvestment ? 0 : (Double(cashBalanceText) ?? 0)
         let acc = Account(
             name: name.trimmingCharacters(in: .whitespaces),
             type: type,
