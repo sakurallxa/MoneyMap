@@ -44,20 +44,42 @@ struct RebalanceView: View {
         RebalanceService.overallDeviation(items: items)
     }
 
-    private var statusText: String {
+    /// 状态分级 — 翻译成 actionable 标签
+    private enum Status {
+        case healthy   // < 3% — 配置健康
+        case suggest   // 3-8% — 可以再平衡
+        case urgent    // ≥ 8% — 需要再平衡
+    }
+
+    private var status: Status {
         let d = overallDeviation
-        if d < 2 { return "组合非常匹配目标,无需调整" }
-        if d < 5 { return "轻微偏离,可暂不调整" }
-        if d < 10 { return "建议适度调整" }
-        return "偏离较大,建议尽快再平衡"
+        if d < 3 { return .healthy }
+        if d < 8 { return .suggest }
+        return .urgent
+    }
+
+    private var statusLabel: String {
+        switch status {
+        case .healthy: return "配置健康"
+        case .suggest: return "可以再平衡"
+        case .urgent:  return "需要再平衡"
+        }
+    }
+
+    private var statusIcon: String {
+        switch status {
+        case .healthy: return "checkmark.circle.fill"
+        case .suggest: return "circle.lefthalf.filled"
+        case .urgent:  return "exclamationmark.circle.fill"
+        }
     }
 
     private var statusColor: Color {
-        let d = overallDeviation
-        if d < 2 { return .pnlNegative }
-        if d < 5 { return .secondary }
-        if d < 10 { return .orange }
-        return .pnlPositive
+        switch status {
+        case .healthy: return .pnlNegative   // 绿
+        case .suggest: return .orange
+        case .urgent:  return .pnlPositive   // 红
+        }
     }
 
     private var daysSinceLast: Int? {
@@ -141,23 +163,34 @@ struct RebalanceView: View {
 
     private var summaryHero: some View {
         VStack(alignment: .leading, spacing: 14) {
+            // 顶行:整体偏离度 + (模式 + 上次再平衡)同一水平线
             HStack {
                 Text("整体偏离度")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.secondary)
                 Spacer()
-                HStack(spacing: 4) {
-                    Image(systemName: "scalemass")
-                        .font(.system(size: 10, weight: .semibold))
-                    Text(currentModel.displayName + "型")
-                        .font(.system(size: 11, weight: .bold))
+                HStack(spacing: 6) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "scalemass")
+                            .font(.system(size: 10, weight: .semibold))
+                        Text(currentModel.displayName + "型")
+                            .font(.system(size: 11, weight: .bold))
+                    }
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 3)
+                    .background(Color(.tertiarySystemGroupedBackground))
+                    .clipShape(Capsule())
+
+                    if let days = daysSinceLast {
+                        Text("上次 \(days) 天前")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.tertiary)
+                    }
                 }
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 9)
-                .padding(.vertical, 3)
-                .background(Color(.tertiarySystemGroupedBackground))
-                .clipShape(Capsule())
             }
+
+            // 大数字
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(String(format: "%.1f", overallDeviation))
                     .font(.system(size: 44, weight: .heavy, design: .rounded))
@@ -169,15 +202,22 @@ struct RebalanceView: View {
             }
             .accessibilityElement(children: .combine)
             .accessibilityLabel("整体偏离度 \(String(format: "%.1f", overallDeviation)) 个百分点")
-            Text(statusText)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(statusColor)
-            if let days = daysSinceLast {
-                Text("上次再平衡 \(days) 天前")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.tertiary)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
+
+            // 状态大标签
+            HStack(spacing: 6) {
+                Image(systemName: statusIcon)
+                    .font(.system(size: 13, weight: .bold))
+                Text(statusLabel)
+                    .font(.system(size: 15, weight: .bold))
             }
+            .foregroundStyle(statusColor)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+            .background(statusColor.opacity(0.12))
+            .clipShape(Capsule())
+            .overlay(
+                Capsule().strokeBorder(statusColor.opacity(0.25), lineWidth: 0.5)
+            )
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 20)
@@ -193,26 +233,23 @@ struct RebalanceView: View {
 
     private var comparisonCard: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("当前 vs 目标")
-                .font(.system(size: 17, weight: .bold))
+            // 标题 + 顶部右侧 legend(含「容差 ±3%」 唯一说明)
+            HStack(alignment: .firstTextBaseline) {
+                Text("当前 vs 目标")
+                    .font(.system(size: 17, weight: .bold))
+                Spacer()
+                HStack(spacing: 10) {
+                    legendItem(label: "当前", isDot: true)
+                    legendItem(label: "目标", isDot: false, lineOnly: true)
+                    legendItem(label: String(format: "容差 ±%.0f%%", tolerance), isDot: false, dashed: true)
+                }
+            }
 
             VStack(spacing: 18) {
                 ForEach(items) { item in
                     comparisonRow(item)
                 }
             }
-
-            // 底部 legend
-            HStack(spacing: 14) {
-                legendItem(label: "当前", isDot: true)
-                legendItem(label: "目标", isDot: false, lineOnly: true)
-                legendItem(label: "容差", isDot: false, dashed: true)
-                Spacer()
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 10)
-            .background(Color.black.opacity(0.035))
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 18)
@@ -225,8 +262,9 @@ struct RebalanceView: View {
     }
 
     private func comparisonRow(_ item: RebalanceItem) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            // 顶行: 色点 + 类名 + 偏差胶囊
+        let within = abs(item.deviationPercent) <= tolerance
+        return VStack(alignment: .leading, spacing: 8) {
+            // 顶行: 色点 + 类名 + 「合格」(仅合格时)
             HStack {
                 HStack(spacing: 6) {
                     Circle()
@@ -236,52 +274,45 @@ struct RebalanceView: View {
                         .font(.system(size: 15, weight: .semibold))
                 }
                 Spacer()
-                deviationBadge(item)
-            }
-
-            // 金额行
-            HStack(spacing: 4) {
-                Text("当前 \(hideBalance ? kHiddenAmountMask : "¥\(formatShort(item.currentValue)) ")")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.tertiary)
-                Image(systemName: "arrow.right")
-                    .font(.system(size: 8))
-                    .foregroundStyle(.tertiary)
-                Text("目标 \(hideBalance ? kHiddenAmountMask : "¥\(formatShort(item.targetValue))")")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.tertiary)
+                if within {
+                    qualifiedBadge
+                }
             }
 
             // 进度 bar(目标范围带 + 目标线 + 当前圆点)
             progressBar(item)
-                .padding(.vertical, 4)
+                .padding(.vertical, 2)
 
-            // 底行
-            HStack {
-                Text(String(format: "当前 %.1f%% · 目标 %.0f%% · 容差 ±%.0f%%",
-                            item.currentPercent, item.targetPercent, tolerance))
-                    .font(.system(size: 11))
-                    .foregroundStyle(.tertiary)
-                Spacer()
-            }
+            // 单行聚合金额 + 百分比说明
+            Text(aggregatedSummary(item))
+                .font(.system(size: 11))
+                .foregroundStyle(.tertiary)
         }
     }
 
-    private func deviationBadge(_ item: RebalanceItem) -> some View {
-        let dev = item.deviationPercent
-        let within = abs(dev) <= tolerance
-        return HStack(spacing: 3) {
-            Image(systemName: within ? "checkmark.circle.fill" : (dev > 0 ? "arrow.up" : "arrow.down"))
+    private var qualifiedBadge: some View {
+        HStack(spacing: 3) {
+            Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 9, weight: .bold))
-            Text(within ? "合格" : String(format: "%+.1f%%", dev))
+            Text("合格")
                 .font(.system(size: 11, weight: .bold))
-                .monospacedDigit()
         }
-        .foregroundStyle(within ? Color.pnlNegative : Color.pnlPositive)
+        .foregroundStyle(Color.pnlNegative)
         .padding(.horizontal, 8)
         .padding(.vertical, 3)
-        .background((within ? Color.pnlNegative : Color.pnlPositive).opacity(0.12))
+        .background(Color.pnlNegative.opacity(0.12))
         .clipShape(Capsule())
+    }
+
+    private func aggregatedSummary(_ item: RebalanceItem) -> String {
+        if hideBalance {
+            return "当前 \(kHiddenAmountMask) → 目标 \(kHiddenAmountMask)"
+        }
+        return String(format: "当前 ¥%@(%.1f%%) → 目标 ¥%@(%.0f%%)",
+                      formatShort(item.currentValue),
+                      item.currentPercent,
+                      formatShort(item.targetValue),
+                      item.targetPercent)
     }
 
     private func progressBar(_ item: RebalanceItem) -> some View {
@@ -367,14 +398,8 @@ struct RebalanceView: View {
 
     private var suggestionsCard: some View {
         VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                Text("调整建议")
-                    .font(.system(size: 17, weight: .bold))
-                Spacer()
-                Text("\(sellItems.count + buyItems.count) 项 · 按偏差排序")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.tertiary)
-            }
+            Text("调整建议")
+                .font(.system(size: 17, weight: .bold))
 
             if sellItems.isEmpty && buyItems.isEmpty {
                 Text("无需调整 · 当前组合在目标范围内 👍")
@@ -449,16 +474,10 @@ struct RebalanceView: View {
 
             Spacer()
 
-            VStack(alignment: .trailing, spacing: 2) {
-                Text(hideBalance ? kHiddenAmountMask : "¥" + formatShort(abs(item.actionAmount)))
-                    .font(.system(size: 14, weight: .bold))
-                    .monospacedDigit()
-                    .foregroundStyle(color)
-                Text(String(format: "%+.1f%%", item.deviationPercent))
-                    .font(.system(size: 10))
-                    .monospacedDigit()
-                    .foregroundStyle(.tertiary)
-            }
+            Text(hideBalance ? kHiddenAmountMask : "¥" + formatShort(abs(item.actionAmount)))
+                .font(.system(size: 14, weight: .bold))
+                .monospacedDigit()
+                .foregroundStyle(color)
 
             Button {
                 prefill = RebalancePrefill(
@@ -469,10 +488,10 @@ struct RebalanceView: View {
             } label: {
                 Text("去交易")
                     .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(color)
+                    .foregroundStyle(Theme.Palette.accentDark)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Theme.Palette.accent.opacity(0.14))
                     .clipShape(Capsule())
             }
             .buttonStyle(.plain)

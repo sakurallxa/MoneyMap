@@ -16,14 +16,6 @@ struct BreakdownDonutCard: View {
         breakdown.segments.sorted { $0.value > $1.value }
     }
 
-    private var topFour: [(label: String, value: Double, colorHex: String)] {
-        Array(rankedSegments.prefix(4))
-    }
-
-    private var remaining: Int {
-        max(0, rankedSegments.count - 4)
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // 标题行
@@ -78,9 +70,9 @@ struct BreakdownDonutCard: View {
                     }
                 }
 
-                VStack(alignment: .leading, spacing: 8) {
-                    ForEach(topFour.indices, id: \.self) { i in
-                        let s = topFour[i]
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(rankedSegments.indices, id: \.self) { i in
+                        let s = rankedSegments[i]
                         HStack(spacing: 8) {
                             Circle()
                                 .fill(Color(hex: s.colorHex))
@@ -94,12 +86,6 @@ struct BreakdownDonutCard: View {
                                 .monospacedDigit()
                                 .foregroundStyle(.primary)
                         }
-                    }
-                    if remaining > 0 {
-                        Text("+ 还有 \(remaining) 类 ›")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.tertiary)
-                            .padding(.top, 2)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
