@@ -1,143 +1,487 @@
 import SwiftUI
 
-/// 首次启动引导用户输入姓氏 + 选择称呼。组合后保存为「陈先生」/「李女士」。
+/// 首次启动引导。两步:
+/// ① 欢迎页(¥ logo bloom + feature 列表 + 开始 CTA)
+/// ② 称呼输入(称谓三选 + 姓 + 实时问候预览 + 完成)
+/// 元素 staggered fade-in + slide-up;logo 用 spring bloom。
 struct NicknameOnboardingView: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage("userNickname") private var userNickname: String = ""
     @AppStorage("didShowNicknameOnboarding") private var didShowOnboarding: Bool = false
 
+    @State private var step: Int = 0
+    @State private var welcomeAppeared = false
+    @State private var nicknameAppeared = false
     @State private var surname: String = ""
     @State private var gender: Gender = .mister
     @FocusState private var isFocused: Bool
 
     enum Gender: String, CaseIterable {
-        case mister, miss
+        case mister, miss, other
         var displayName: String {
             switch self {
             case .mister: return "先生"
-            case .miss: return "女士"
+            case .miss:   return "女士"
+            case .other:  return "其他"
+            }
+        }
+        /// 用作昵称后缀。其他 → 空(只用姓)。
+        var suffix: String {
+            switch self {
+            case .mister: return "先生"
+            case .miss:   return "女士"
+            case .other:  return ""
             }
         }
     }
 
-    private var preview: String {
+    private var nickname: String {
         let s = surname.trimmingCharacters(in: .whitespaces)
-        if s.isEmpty { return "陈\(gender.displayName)" }
-        return s + gender.displayName
+        guard !s.isEmpty else { return "" }
+        return s + gender.suffix
     }
 
-    private var canSave: Bool {
+    private var previewGreeting: String {
+        let hour = Calendar.current.component(.hour, from: Date())
+        let base: String
+        switch hour {
+        case 5..<12:  base = "早上好"
+        case 12..<14: base = "中午好"
+        case 14..<18: base = "下午好"
+        case 18..<23: base = "晚上好"
+        default:      base = "夜深了"
+        }
+        let n = nickname
+        return n.isEmpty ? base : "\(base),\(n)"
+    }
+
+    private var canFinish: Bool {
         !surname.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            Spacer()
+        ZStack {
+            Theme.Palette.pageBgWarm.ignoresSafeArea()
 
-            // 顶部图标
+            if step == 0 {
+                welcomePage
+                    .transition(.asymmetric(
+                        insertion: .opacity.combined(with: .move(edge: .leading)),
+                        removal: .opacity.combined(with: .move(edge: .leading))
+                    ))
+            } else {
+                nicknamePage
+                    .transition(.asymmetric(
+                        insertion: .opacity.combined(with: .move(edge: .trailing)),
+                        removal: .opacity
+                    ))
+            }
+        }
+        .onAppear {
+            // 触发欢迎页的 staggered 入场
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                welcomeAppeared = true
+            }
+        }
+    }
+
+    // MARK: - ① 欢迎页
+
+    private var welcomePage: some View {
+        VStack(spacing: 0) {
+            Spacer(minLength: 40)
+
+            // ¥ logo (bloom)
             ZStack {
-                Circle()
+                RoundedRectangle(cornerRadius: 30, style: .continuous)
                     .fill(
                         LinearGradient(
                             colors: [Theme.Palette.accent, Theme.Palette.accentDark],
                             startPoint: .topLeading, endPoint: .bottomTrailing
                         )
                     )
-                    .frame(width: 76, height: 76)
-                Image(systemName: "hand.wave.fill")
-                    .font(.system(size: 32, weight: .semibold))
+                    .frame(width: 120, height: 120)
+                    .overlay(
+                        // 内高光
+                        RoundedRectangle(cornerRadius: 30, style: .continuous)
+                            .strokeBorder(
+                                LinearGradient(
+                                    colors: [.white.opacity(0.45), .white.opacity(0)],
+                                    startPoint: .topLeading, endPoint: .center
+                                ),
+                                lineWidth: 1.5
+                            )
+                    )
+                    .shadow(color: Theme.Palette.accent.opacity(0.45), radius: 28, x: 0, y: 14)
+
+                Text("¥")
+                    .font(.system(size: 64, weight: .heavy, design: .rounded))
                     .foregroundStyle(.white)
+                    .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
             }
-            .padding(.bottom, 20)
+            .scaleEffect(welcomeAppeared ? 1.0 : 0.6)
+            .opacity(welcomeAppeared ? 1.0 : 0.0)
+            .animation(.spring(response: 0.7, dampingFraction: 0.6).delay(0.05), value: welcomeAppeared)
+            .padding(.bottom, 32)
 
-            Text("欢迎来到钱袋")
-                .font(.system(size: 24, weight: .bold))
-                .padding(.bottom, 4)
+            // 标题
+            staggeredItem(delay: 0.20) {
+                Text("欢迎使用钱袋")
+                    .font(.system(size: 32, weight: .heavy))
+                    .foregroundStyle(.primary)
+            }
+            .padding(.bottom, 12)
 
-            Text("我们怎么称呼你?")
-                .font(.system(size: 14))
-                .foregroundStyle(.secondary)
-                .padding(.bottom, 24)
+            // 副标
+            staggeredItem(delay: 0.30) {
+                Text("把你的资产、持仓、定投装进一个袋子,\n一眼看清每一笔财富的去向。")
+                    .font(.system(size: 14))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(4)
+            }
+            .padding(.bottom, 36)
 
-            // 预览
-            Text(preview)
-                .font(.system(size: 36, weight: .bold, design: .rounded))
-                .foregroundStyle(Theme.Palette.accentDark)
-                .padding(.bottom, 28)
-
-            // 输入区
+            // feature 列表
             VStack(alignment: .leading, spacing: 14) {
-                HStack {
-                    Text("你的姓")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                    TextField("如:陈", text: $surname)
-                        .font(.system(size: 17, weight: .semibold))
-                        .multilineTextAlignment(.trailing)
-                        .focused($isFocused)
-                        .submitLabel(.done)
-                        .onSubmit { save() }
-                        .frame(maxWidth: 120)
+                staggeredItem(delay: 0.42) {
+                    featureRow(symbol: "chart.pie", text: "一图看遍所有资产分布")
                 }
-                .padding(.horizontal, 18)
-                .padding(.vertical, 14)
-                .background(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(Color(.secondarySystemGroupedBackground))
-                )
-
-                Picker("称呼", selection: $gender) {
-                    ForEach(Gender.allCases, id: \.self) { g in
-                        Text(g.displayName).tag(g)
-                    }
+                staggeredItem(delay: 0.50) {
+                    featureRow(symbol: "waveform.path.ecg", text: "累计盈亏与年化一目了然")
                 }
-                .pickerStyle(.segmented)
+                staggeredItem(delay: 0.58) {
+                    featureRow(symbol: "calendar", text: "定投自动扣款 · 后台执行")
+                }
             }
-            .padding(.horizontal, 20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 40)
 
             Spacer()
 
-            Button {
-                save()
-            } label: {
-                Text("开始使用")
-                    .font(.system(size: 17, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(
-                        RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .fill(canSave ? Theme.Palette.accent : Theme.Palette.accent.opacity(0.4))
-                    )
+            // 开始 CTA
+            staggeredItem(delay: 0.70) {
+                Button {
+                    advanceToNickname()
+                } label: {
+                    Text("开始")
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 18)
+                        .background(
+                            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [Theme.Palette.accent, Theme.Palette.accentDark],
+                                        startPoint: .topLeading, endPoint: .bottomTrailing
+                                    )
+                                )
+                                .shadow(color: Theme.Palette.accent.opacity(0.45), radius: 18, y: 8)
+                        )
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 22)
             }
-            .buttonStyle(.plain)
-            .disabled(!canSave)
-            .padding(.horizontal, 20)
-            .padding(.bottom, 12)
 
-            Button {
-                userNickname = "钱袋用户"
-                didShowOnboarding = true
-                dismiss()
-            } label: {
-                Text("以后再说")
+            staggeredItem(delay: 0.80) {
+                Text("所有数据仅保存在你的设备 · 可选 iCloud 同步")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.tertiary)
+                    .padding(.top, 10)
+            }
+            .padding(.bottom, 28)
+        }
+    }
+
+    private func featureRow(symbol: String, text: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: symbol)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Theme.Palette.accentDark)
+                .frame(width: 30, height: 30)
+                .background(
+                    Circle().fill(Theme.Palette.accent.opacity(0.14))
+                )
+            Text(text)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(.primary)
+        }
+    }
+
+    // MARK: - ② 称呼输入页
+
+    private var nicknamePage: some View {
+        VStack(spacing: 0) {
+            // 顶部:跳过
+            HStack {
+                Spacer()
+                staggeredItem(delay: 0.10, appeared: nicknameAppeared) {
+                    Button {
+                        skipAndDismiss()
+                    } label: {
+                        Text("跳过")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 7)
+                            .background(
+                                Capsule().fill(Color.black.opacity(0.06))
+                            )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 18)
+            .padding(.top, 14)
+
+            // person icon
+            staggeredItem(delay: 0.16, appeared: nicknameAppeared) {
+                Image(systemName: "person.crop.circle.fill")
+                    .font(.system(size: 36))
+                    .foregroundStyle(Theme.Palette.accent, Theme.Palette.accent.opacity(0.15))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.leading, 22)
+                    .padding(.top, 16)
+            }
+
+            // 标题
+            staggeredItem(delay: 0.22, appeared: nicknameAppeared) {
+                Text("如何称呼您?")
+                    .font(.system(size: 28, weight: .heavy))
+                    .foregroundStyle(.primary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.leading, 22)
+                    .padding(.top, 14)
+            }
+
+            // 副说明
+            staggeredItem(delay: 0.30, appeared: nicknameAppeared) {
+                Text("想给您一个专属的问候 · 仅在本地保存,可在「设置」里随时修改。")
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
+                    .lineSpacing(3)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 22)
+                    .padding(.top, 8)
             }
-            .padding(.bottom, 32)
+
+            // 称谓 segmented
+            staggeredItem(delay: 0.40, appeared: nicknameAppeared) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("称谓")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(.tertiary)
+                    HStack(spacing: 10) {
+                        ForEach(Gender.allCases, id: \.self) { g in
+                            genderChip(g)
+                        }
+                    }
+                }
+                .padding(.horizontal, 22)
+                .padding(.top, 24)
+            }
+
+            // 姓输入
+            staggeredItem(delay: 0.50, appeared: nicknameAppeared) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("您的姓")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(.tertiary)
+                    surnameInput
+                }
+                .padding(.horizontal, 22)
+                .padding(.top, 18)
+            }
+
+            // 实时问候预览
+            staggeredItem(delay: 0.60, appeared: nicknameAppeared) {
+                previewCard
+                    .padding(.horizontal, 22)
+                    .padding(.top, 18)
+            }
+
+            Spacer()
+
+            // 完成 CTA
+            staggeredItem(delay: 0.70, appeared: nicknameAppeared) {
+                Button {
+                    finish()
+                } label: {
+                    Text("完成")
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 18)
+                        .background(
+                            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                                .fill(
+                                    LinearGradient(
+                                        colors: canFinish
+                                            ? [Theme.Palette.accent, Theme.Palette.accentDark]
+                                            : [Theme.Palette.accent.opacity(0.4), Theme.Palette.accentDark.opacity(0.4)],
+                                        startPoint: .topLeading, endPoint: .bottomTrailing
+                                    )
+                                )
+                                .shadow(color: Theme.Palette.accent.opacity(canFinish ? 0.45 : 0), radius: 18, y: 8)
+                        )
+                }
+                .buttonStyle(.plain)
+                .disabled(!canFinish)
+                .padding(.horizontal, 22)
+                .padding(.bottom, 28)
+            }
         }
-        .background(Theme.Palette.pageBgWarm.ignoresSafeArea())
         .onAppear {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                nicknameAppeared = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
                 isFocused = true
             }
         }
     }
 
-    private func save() {
-        guard canSave else { return }
-        userNickname = preview
+    private func genderChip(_ g: Gender) -> some View {
+        let selected = gender == g
+        return Button {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
+                gender = g
+            }
+        } label: {
+            Text(g.displayName)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(selected ? .white : .primary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(
+                            selected
+                            ? AnyShapeStyle(
+                                LinearGradient(
+                                    colors: [Theme.Palette.accent, Theme.Palette.accentDark],
+                                    startPoint: .topLeading, endPoint: .bottomTrailing
+                                )
+                            )
+                            : AnyShapeStyle(Color(.secondarySystemGroupedBackground))
+                        )
+                        .shadow(color: selected ? Theme.Palette.accent.opacity(0.35) : .black.opacity(0.04),
+                                radius: selected ? 12 : 4, y: selected ? 6 : 2)
+                )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var surnameInput: some View {
+        ZStack(alignment: .trailing) {
+            HStack(spacing: 0) {
+                TextField("", text: $surname)
+                    .font(.system(size: 32, weight: .heavy))
+                    .foregroundStyle(.primary)
+                    .focused($isFocused)
+                    .submitLabel(.done)
+                    .onSubmit { finish() }
+                    .onChange(of: surname) { _, new in
+                        // 限制为单字
+                        let trimmed = new.trimmingCharacters(in: .whitespaces)
+                        if trimmed.count > 1 {
+                            surname = String(trimmed.prefix(1))
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+            .frame(maxWidth: .infinity)
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(Color(.secondarySystemGroupedBackground))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .strokeBorder(Theme.Palette.accent.opacity(0.75), lineWidth: 1.5)
+            )
+            .shadow(color: Theme.Palette.accent.opacity(0.22), radius: 14, y: 4)
+
+            Text("1 个字 · 仅取姓")
+                .font(.system(size: 11))
+                .foregroundStyle(.tertiary)
+                .padding(.trailing, 20)
+        }
+    }
+
+    private var previewCard: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "hand.wave.fill")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Theme.Palette.accentDark)
+                .frame(width: 30, height: 30)
+                .background(
+                    RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        .fill(Theme.Palette.accent.opacity(0.18))
+                )
+            VStack(alignment: .leading, spacing: 2) {
+                Text("首页问候预览")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(.tertiary)
+                Text(previewGreeting)
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(.primary)
+                    .animation(.easeOut(duration: 0.2), value: previewGreeting)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Theme.Palette.accent.opacity(0.06))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(
+                    Theme.Palette.accent.opacity(0.55),
+                    style: StrokeStyle(lineWidth: 1, dash: [4, 3])
+                )
+        )
+    }
+
+    // MARK: - 动画 helper
+
+    /// 通用 staggered 入场容器 — fade-in + slide-up,easeOut。
+    @ViewBuilder
+    private func staggeredItem<Content: View>(
+        delay: Double,
+        appeared: Bool? = nil,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        let visible = appeared ?? welcomeAppeared
+        content()
+            .opacity(visible ? 1 : 0)
+            .offset(y: visible ? 0 : 18)
+            .animation(.easeOut(duration: 0.55).delay(delay), value: visible)
+    }
+
+    // MARK: - flow
+
+    private func advanceToNickname() {
+        withAnimation(.easeInOut(duration: 0.45)) {
+            step = 1
+        }
+    }
+
+    private func skipAndDismiss() {
+        userNickname = "钱袋用户"
+        didShowOnboarding = true
+        dismiss()
+    }
+
+    private func finish() {
+        guard canFinish else { return }
+        let n = nickname
+        userNickname = n.isEmpty ? "钱袋用户" : n
         didShowOnboarding = true
         dismiss()
     }
