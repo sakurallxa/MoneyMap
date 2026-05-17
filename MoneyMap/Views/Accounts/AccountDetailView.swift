@@ -62,11 +62,6 @@ struct AccountDetailView: View {
                     .listRowSeparator(.hidden)
             }
 
-            Section { cashCard }
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 6, leading: 14, bottom: 6, trailing: 14))
-                .listRowSeparator(.hidden)
-
             if !positions.isEmpty {
                 Section {
                     ForEach(positions) { pos in
@@ -90,19 +85,12 @@ struct AccountDetailView: View {
                             }
                     }
                 } header: {
-                    HStack {
-                        Text("持仓 · \(positions.count) 项")
-                            .font(.system(size: 11, weight: .bold))
-                            .kerning(1.2)
-                            .foregroundStyle(.tertiary)
-                            .textCase(nil)
-                        Spacer()
-                        Text("左滑可编辑/删除")
-                            .font(.system(size: 10))
-                            .foregroundStyle(.tertiary)
-                            .textCase(nil)
-                    }
-                    .padding(.horizontal, 6)
+                    Text("持仓 · \(positions.count) 项")
+                        .font(.system(size: 11, weight: .bold))
+                        .kerning(1.2)
+                        .foregroundStyle(.tertiary)
+                        .textCase(nil)
+                        .padding(.horizontal, 6)
                 }
             }
         }
@@ -196,31 +184,6 @@ struct AccountDetailView: View {
                 .monospacedDigit()
                 .foregroundStyle(.primary)
                 .accessibilityLabel(totalValueCNY.accessibilityAmountLabel(prefix: "账户总值", hidden: hideBalance))
-
-            if isInvestmentAccount && !positions.isEmpty {
-                HStack {
-                    HStack(spacing: 4) {
-                        Image(systemName: returns.dailyPnL >= 0 ? "arrow.up.right" : "arrow.down.right")
-                            .font(.system(size: 11, weight: .bold))
-                        Text(hideBalance ? "¥····" : CurrencyFormatter.signedCNY(returns.dailyPnL))
-                            .font(.system(size: 13, weight: .bold))
-                            .monospacedDigit()
-                        Text(hideBalance ? "··%" : CurrencyFormatter.percent(returns.dailyPnLPercent))
-                            .font(.system(size: 13, weight: .semibold))
-                            .monospacedDigit()
-                    }
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(Color.pnlColor(returns.dailyPnL))
-                    .clipShape(Capsule())
-
-                    Spacer()
-                    Text("今日")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.tertiary)
-                }
-            }
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 22)
@@ -284,7 +247,7 @@ struct AccountDetailView: View {
                     Text(hideBalance ? "··%" : CurrencyFormatter.percent(returns.unrealizedPnLPercent))
                         .font(.system(size: 11, weight: .semibold))
                         .monospacedDigit()
-                        .foregroundStyle(Color.pnlColor(returns.unrealizedPnL))
+                        .foregroundStyle(.tertiary)
                 }
             }
             .padding(.horizontal, 14)
@@ -304,105 +267,23 @@ struct AccountDetailView: View {
         .cardElevation()
     }
 
-    private var cashCard: some View {
-        HStack(spacing: 14) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color(hex: "#5B8FF9").opacity(0.16))
-                Image(systemName: "creditcard.fill")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(Color(hex: "#5B8FF9"))
-            }
-            .frame(width: 42, height: 42)
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text("现金余额")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.secondary)
-                Text(currencyLabel(account.currency))
-                    .font(.system(size: 11))
-                    .foregroundStyle(.tertiary)
-            }
-
-            Spacer()
-
-            VStack(alignment: .trailing, spacing: 3) {
-                if account.currency != .cny {
-                    Text(hideBalance ? kHiddenAmountMask : "\(account.currency.symbol)\(formatCash(account.cashBalance))")
-                        .font(.system(size: 15, weight: .semibold))
-                        .monospacedDigit()
-                    Text(hideBalance ? kHiddenAmountMask : "≈ ¥\(formatCash(account.cashBalance * (rateMap[account.currency.rawValue] ?? 1.0)))")
-                        .font(.system(size: 11))
-                        .monospacedDigit()
-                        .foregroundStyle(.tertiary)
-                } else {
-                    Text(hideBalance ? kHiddenAmountMask : "¥\(formatCash(account.cashBalance))")
-                        .font(.system(size: 17, weight: .bold))
-                        .monospacedDigit()
-                }
-            }
-
-            Button {
-                showEditSheet = true
-            } label: {
-                HStack(spacing: 3) {
-                    Text("调账")
-                        .font(.system(size: 11, weight: .semibold))
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 10, weight: .semibold))
-                }
-                .foregroundStyle(Theme.Palette.accentDark)
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 16)
-        .frame(maxWidth: .infinity)
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color(.secondarySystemGroupedBackground))
-        )
-        .cardElevation()
-    }
-
-    private func currencyLabel(_ c: CurrencyCode) -> String {
-        switch c {
-        case .cny: return "人民币 CNY"
-        case .hkd: return "港币 HKD"
-        case .usd: return "美元 USD"
-        }
-    }
-
     private func formatNumber(_ v: Double) -> String {
         let f = NumberFormatter()
         f.numberStyle = .decimal
         f.maximumFractionDigits = 0
         return f.string(from: NSNumber(value: v)) ?? "0"
     }
-
-    private func formatCash(_ v: Double) -> String {
-        let f = NumberFormatter()
-        f.numberStyle = .decimal
-        f.minimumFractionDigits = 2
-        f.maximumFractionDigits = 2
-        return f.string(from: NSNumber(value: v)) ?? "0.00"
-    }
 }
 
-/// 持仓行 — 渐变 icon(资产名首字) + 名称 + 代码·持有 + 右侧市值 + 涨跌
+/// 持仓行 — 渐变 icon + 资产名 + 代码(黄金附克数) + 右侧市值
+/// 极简版:不展示今日%/累计%/份额(基金股票),重点是金额分布。
 struct PositionRow: View {
     let position: Position
     @AppStorage("hideBalance") private var hideBalance = false
 
     private var currency: CurrencyCode { position.effectiveCurrency }
 
-    private var sharesUnit: String {
-        switch position.assetClass {
-        case .gold: return "克"
-        case .stockA, .stockHK, .stockUS: return "股"
-        default: return "份"
-        }
-    }
+    private var isGold: Bool { position.assetClass == .gold }
 
     private var iconColor: Color {
         switch position.assetClass {
@@ -415,9 +296,16 @@ struct PositionRow: View {
         }
     }
 
+    /// 副行:基金/股票 = 代码;黄金 = 代码 · X.XX g
+    private var subtitle: String {
+        if isGold {
+            return "\(position.assetCode) · \(String(format: "%.2f", position.shares)) g"
+        }
+        return position.assetCode
+    }
+
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            // 渐变 icon
+        HStack(alignment: .center, spacing: 12) {
             ZStack {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .fill(
@@ -438,39 +326,18 @@ struct PositionRow: View {
                     .foregroundStyle(.primary)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
-                HStack(spacing: 4) {
-                    Text(position.assetCode)
-                        .font(.system(size: 11))
-                        .foregroundStyle(.tertiary)
-                    Text("·")
-                        .foregroundStyle(.tertiary)
-                    Text("持 \(CurrencyFormatter.shares(position.shares)) \(sharesUnit)")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.tertiary)
-                }
+                Text(subtitle)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.tertiary)
+                    .monospacedDigit()
             }
 
             Spacer(minLength: 8)
 
-            VStack(alignment: .trailing, spacing: 4) {
-                Text(hideBalance ? kHiddenAmountMask : "\(currency.symbol)\(formatValue(position.marketValue))")
-                    .font(.system(size: 15, weight: .bold))
-                    .monospacedDigit()
-                    .lineLimit(1)
-                HStack(spacing: 6) {
-                    Text(hideBalance ? "今日 ··%" : "今日 \(CurrencyFormatter.percent(position.dailyPnLPercent))")
-                        .font(.system(size: 10, weight: .semibold))
-                        .monospacedDigit()
-                        .foregroundStyle(Color.pnlColor(position.dailyPnL))
-                    Text("·")
-                        .font(.system(size: 10))
-                        .foregroundStyle(.tertiary)
-                    Text(hideBalance ? "累计 ··%" : "累计 \(CurrencyFormatter.percent(position.unrealizedPnLPercent))")
-                        .font(.system(size: 10, weight: .semibold))
-                        .monospacedDigit()
-                        .foregroundStyle(Color.pnlColor(position.unrealizedPnL))
-                }
-            }
+            Text(hideBalance ? kHiddenAmountMask : "\(currency.symbol)\(formatValue(position.marketValue))")
+                .font(.system(size: 15, weight: .bold))
+                .monospacedDigit()
+                .lineLimit(1)
         }
     }
 
