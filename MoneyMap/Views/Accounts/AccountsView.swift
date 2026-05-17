@@ -47,21 +47,27 @@ struct AccountsView: View {
         NavigationStack {
             ScrollView {
                 if accounts.isEmpty {
-                    ContentUnavailableView(
-                        "还没有账户",
-                        systemImage: "wallet.pass",
-                        description: Text("点击右上角 + 添加")
-                    )
-                    .padding(.top, 100)
+                    VStack(spacing: 14) {
+                        headerRow
+                        ContentUnavailableView(
+                            "还没有账户",
+                            systemImage: "wallet.pass",
+                            description: Text("点击右上角 + 添加")
+                        )
+                        .padding(.top, 80)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.top, 8)
                 } else {
                     VStack(spacing: 14) {
+                        headerRow
                         summaryCard
 
                         if !investmentAccounts.isEmpty {
-                            sectionGroup(title: "投资账户", count: investmentAccounts.count, total: investmentTotal, accounts: investmentAccounts)
+                            sectionGroup(title: "投资账户", count: investmentAccounts.count, accounts: investmentAccounts)
                         }
                         if !cashAccounts.isEmpty {
-                            sectionGroup(title: "现金账户", count: cashAccounts.count, total: cashTotal, accounts: cashAccounts)
+                            sectionGroup(title: "现金账户", count: cashAccounts.count, accounts: cashAccounts)
                         }
 
                         Spacer(minLength: 24)
@@ -71,43 +77,41 @@ struct AccountsView: View {
                 }
             }
             .background(Theme.Palette.pageBgWarm.ignoresSafeArea())
-            .navigationTitle("账户")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Text("\(accounts.count) 个 · 合计 \(hideBalance ? kHiddenAmountMask : formatCNY(grandTotal))")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showAddSheet = true
-                    } label: {
-                        ZStack {
-                            Circle()
-                                .fill(Theme.Palette.accent)
-                                .frame(width: 36, height: 36)
-                            Image(systemName: "plus")
-                                .font(.system(size: 17, weight: .semibold))
-                                .foregroundStyle(.white)
-                        }
-                        .shadow(color: Theme.Palette.accent.opacity(0.3), radius: 8, x: 0, y: 4)
-                    }
-                }
-            }
+            .navigationBarHidden(true)
             .sheet(isPresented: $showAddSheet) {
                 AddAccountSheet()
             }
         }
     }
 
-    /// 顶部 summary 卡:按用途 · 投资类 + 现金类双列 + 占比 stacked bar
+    /// 顶部:账户标题 + 右侧「+」按钮(与标题同一基线)
+    private var headerRow: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text("账户")
+                .font(.system(size: 32, weight: .bold))
+                .foregroundStyle(.primary)
+            Spacer()
+            Button {
+                showAddSheet = true
+            } label: {
+                ZStack {
+                    Circle()
+                        .fill(Theme.Palette.accent)
+                        .frame(width: 36, height: 36)
+                    Image(systemName: "plus")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(.white)
+                }
+                .shadow(color: Theme.Palette.accent.opacity(0.3), radius: 8, x: 0, y: 4)
+            }
+            .alignmentGuide(.firstTextBaseline) { d in d[.bottom] - 6 }
+        }
+        .padding(.horizontal, 4)
+    }
+
+    /// 顶部 summary 卡:投资类 + 现金类双列 + 占比 stacked bar
     private var summaryCard: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("按用途")
-                .font(.system(size: 11))
-                .foregroundStyle(.tertiary)
-
             HStack(alignment: .top, spacing: 0) {
                 summaryColumn(label: "投资类", value: investmentTotal, share: grandTotal > 0 ? investmentTotal / grandTotal : 0, color: Theme.Palette.accent)
                 Rectangle()
@@ -169,7 +173,7 @@ struct AccountsView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func sectionGroup(title: String, count: Int, total: Double, accounts: [Account]) -> some View {
+    private func sectionGroup(title: String, count: Int, accounts: [Account]) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .center, spacing: 6) {
                 Text(title)
@@ -179,10 +183,6 @@ struct AccountsView: View {
                     .font(.system(size: 12))
                     .foregroundStyle(.tertiary)
                 Spacer()
-                Text(hideBalance ? kHiddenAmountMask : formatCNY(total))
-                    .font(.system(size: 12, weight: .semibold))
-                    .monospacedDigit()
-                    .foregroundStyle(.tertiary)
             }
             .padding(.horizontal, 8)
 
@@ -226,7 +226,9 @@ struct AccountRow: View {
     let rateMap: [String: Double]
     let hideBalance: Bool
 
-    private var hasInvestments: Bool { !positions.isEmpty }
+    private var isInvestmentType: Bool { account.type.isInvestment }
+    private var isGold: Bool { account.type.isGold }
+    private var hasPositions: Bool { !positions.isEmpty }
 
     private var totalCNY: Double {
         let cashFx = rateMap[account.currency.rawValue] ?? 1.0
@@ -237,18 +239,28 @@ struct AccountRow: View {
         return cashCNY + posCNY
     }
 
-    private var todayPnL: Double {
-        positions.reduce(0.0) { sum, p in
-            sum + p.dailyPnL * (rateMap[p.effectiveCurrency.rawValue] ?? 1.0)
+    /// 投资账户(含黄金)累计盈亏 — 浮盈合计,CNY 折算。
+    /// 现金账户没有"累计盈亏"概念,这里返回 0(不展示)。
+    private var cumulativePnL: Double {
+        guard isInvestmentType else { return 0 }
+        return positions.reduce(0.0) { sum, p in
+            sum + p.unrealizedPnL * (rateMap[p.effectiveCurrency.rawValue] ?? 1.0)
         }
     }
 
-    private var todayPnLPct: Double {
-        let prev = positions.reduce(0.0) { sum, p in
-            sum + p.shares * p.prevClosePrice * (rateMap[p.effectiveCurrency.rawValue] ?? 1.0)
+    /// 累计收益率 = 累计盈亏 / 总成本(CNY)
+    private var cumulativePnLPct: Double {
+        guard isInvestmentType else { return 0 }
+        let cost = positions.reduce(0.0) { sum, p in
+            sum + p.totalCost * (rateMap[p.effectiveCurrency.rawValue] ?? 1.0)
         }
-        guard prev > 0 else { return 0 }
-        return todayPnL / prev * 100
+        guard cost > 0 else { return 0 }
+        return cumulativePnL / cost * 100
+    }
+
+    /// 黄金账户的总克数(shares 在黄金类里就是克)。
+    private var totalGrams: Double {
+        positions.reduce(0.0) { $0 + $1.shares }
     }
 
     var body: some View {
@@ -268,24 +280,7 @@ struct AccountRow: View {
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
-                if hasInvestments {
-                    HStack(spacing: 3) {
-                        Image(systemName: todayPnL >= 0 ? "arrow.up.right" : "arrow.down.right")
-                            .font(.system(size: 10, weight: .bold))
-                        Text(hideBalance ? "¥····" : (todayPnL >= 0 ? "+" : "-") + "¥\(formatShort(abs(todayPnL)))")
-                            .font(.system(size: 11, weight: .semibold))
-                            .monospacedDigit()
-                        Text(hideBalance ? "··%" : String(format: "%+.2f%%", todayPnLPct))
-                            .font(.system(size: 11))
-                            .monospacedDigit()
-                    }
-                    .foregroundStyle(Color.pnlColor(todayPnL))
-                } else if !account.note.isEmpty {
-                    Text(account.note)
-                        .font(.system(size: 11))
-                        .foregroundStyle(.tertiary)
-                        .lineLimit(1)
-                }
+                subRow
             }
 
             Spacer(minLength: 6)
@@ -295,15 +290,10 @@ struct AccountRow: View {
                     .font(.system(size: 15, weight: .bold))
                     .monospacedDigit()
                     .lineLimit(1)
-                if hasInvestments {
-                    Text("\(positions.count) 个持仓")
-                        .font(.system(size: 10))
-                        .foregroundStyle(.tertiary)
-                } else {
-                    Text(account.currency.rawValue)
-                        .font(.system(size: 10))
-                        .foregroundStyle(.tertiary)
-                }
+                Text(rightSubLabel)
+                    .font(.system(size: 10))
+                    .foregroundStyle(.tertiary)
+                    .monospacedDigit()
             }
 
             Image(systemName: "chevron.right")
@@ -313,6 +303,47 @@ struct AccountRow: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
         .contentShape(Rectangle())
+    }
+
+    /// 左下:投资类显示累计盈亏 + 累计%;现金类显示账户类型 + 币种。
+    @ViewBuilder
+    private var subRow: some View {
+        if isInvestmentType {
+            if hasPositions {
+                HStack(spacing: 3) {
+                    Image(systemName: cumulativePnL >= 0 ? "arrow.up.right" : "arrow.down.right")
+                        .font(.system(size: 10, weight: .bold))
+                    Text(hideBalance ? "¥····" : (cumulativePnL >= 0 ? "+" : "-") + "¥\(formatShort(abs(cumulativePnL)))")
+                        .font(.system(size: 11, weight: .semibold))
+                        .monospacedDigit()
+                    Text(hideBalance ? "··%" : String(format: "%+.2f%%", cumulativePnLPct))
+                        .font(.system(size: 11))
+                        .monospacedDigit()
+                }
+                .foregroundStyle(Color.pnlColor(cumulativePnL))
+            } else {
+                Text("尚无持仓")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.tertiary)
+            }
+        } else {
+            // 现金账户:账户类型 + 币种 (e.g. 储蓄卡 · CNY / 货币基金 · CNY)
+            Text("\(account.type.displayName) · \(account.currency.rawValue)")
+                .font(.system(size: 11))
+                .foregroundStyle(.tertiary)
+                .lineLimit(1)
+        }
+    }
+
+    /// 右下:黄金账户显示克数;其他投资账户显示持仓数;现金账户留空。
+    private var rightSubLabel: String {
+        if isGold && hasPositions {
+            return String(format: "%.2f g", totalGrams)
+        }
+        if isInvestmentType {
+            return "\(positions.count) 个持仓"
+        }
+        return ""
     }
 
     private var typeColor: Color {
