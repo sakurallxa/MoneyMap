@@ -6,7 +6,6 @@ struct TargetAllocationSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Query private var existing: [TargetAllocation]
     @AppStorage("rebalanceModelRaw") private var modelRaw: String = RebalanceModel.balanced.rawValue
-    @AppStorage("lastRebalanceDate") private var lastRebalanceTimestamp: Double = 0
 
     @State private var percents: [AssetClass: Double] = [:]
     @State private var selectedModel: RebalanceModel = .balanced
@@ -334,7 +333,6 @@ struct TargetAllocationSheet: View {
             context.insert(TargetAllocation(assetClass: cls, percent: p))
         }
         modelRaw = selectedModel.rawValue
-        lastRebalanceTimestamp = Date().timeIntervalSince1970
         do {
             try context.save()
             ToastManager.shared.success("已保存目标配置 · \(selectedModel.displayName)型")

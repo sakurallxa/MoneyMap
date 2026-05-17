@@ -11,7 +11,6 @@ struct RebalanceView: View {
     @Query(sort: \TargetAllocation.assetClassRaw) private var targets: [TargetAllocation]
 
     @AppStorage("rebalanceModelRaw") private var modelRaw: String = RebalanceModel.balanced.rawValue
-    @AppStorage("lastRebalanceDate") private var lastRebalanceTimestamp: Double = 0
     @AppStorage("hideBalance") private var hideBalance = false
 
     @State private var showEditSheet = false
@@ -80,12 +79,6 @@ struct RebalanceView: View {
         case .suggest: return .orange
         case .urgent:  return .pnlPositive   // 红
         }
-    }
-
-    private var daysSinceLast: Int? {
-        guard lastRebalanceTimestamp > 0 else { return nil }
-        let last = Date(timeIntervalSince1970: lastRebalanceTimestamp)
-        return Calendar.current.dateComponents([.day], from: last, to: Date()).day
     }
 
     private var sellItems: [RebalanceItem] {
@@ -181,12 +174,6 @@ struct RebalanceView: View {
                     .padding(.vertical, 3)
                     .background(Color(.tertiarySystemGroupedBackground))
                     .clipShape(Capsule())
-
-                    if let days = daysSinceLast {
-                        Text("上次 \(days) 天前")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.tertiary)
-                    }
                 }
             }
 
@@ -391,6 +378,8 @@ struct RebalanceView: View {
             Text(label)
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
         }
     }
 
