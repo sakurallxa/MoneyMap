@@ -161,43 +161,39 @@ enum TrendRange: String, CaseIterable {
         }
     }
 
-    /// 区间开始日期。nil 表示不限(全部历史)。
+    /// 走势卡的时间窗口起点。
+    /// - 日:近 7 天(按天聚合)
+    /// - 周:近 3 个月(按周聚合,~13 个点)
+    /// - 月:近 1 年(按月聚合)
+    /// - 今年:今年初至今(按月聚合)
+    /// - 全部:近 5 年(按月聚合,曲线感强)
     var startDate: Date? {
         let cal = Calendar.current
         let now = Date()
         switch self {
         case .day:
-            return cal.date(byAdding: .day, value: -1, to: now)
-        case .week:
             return cal.date(byAdding: .day, value: -7, to: now)
+        case .week:
+            return cal.date(byAdding: .month, value: -3, to: now)
         case .month:
-            return cal.date(byAdding: .day, value: -30, to: now)
+            return cal.date(byAdding: .year, value: -1, to: now)
         case .ytd:
             return cal.date(from: cal.dateComponents([.year], from: now))
         case .all:
-            return nil
+            return cal.date(byAdding: .year, value: -5, to: now)
         }
     }
 
-    /// "本期变化" 行的 prefix
-    var changeLabelPrefix: String {
-        switch self {
-        case .day: return "本日"
-        case .week: return "本周"
-        case .month: return "本月"
-        case .ytd: return "本年"
-        case .all: return "累计"
-        }
+    /// 聚合粒度(将按天的 DailySnapshot 折算成期末值序列)。
+    enum Bucket {
+        case day, week, month
     }
 
-    /// 图表 X 轴标签步长。日太短不需要 X 轴标签。
-    var chartAxisStride: (Calendar.Component, Int)? {
+    var bucket: Bucket {
         switch self {
-        case .day: return nil
-        case .week: return (.day, 2)
-        case .month: return (.day, 7)
-        case .ytd: return (.month, 2)
-        case .all: return (.year, 1)
+        case .day: return .day
+        case .week: return .week
+        case .month, .ytd, .all: return .month
         }
     }
 }

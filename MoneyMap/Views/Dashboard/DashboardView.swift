@@ -77,6 +77,24 @@ struct DashboardView: View {
         return (pow(m, 1 / years) - 1) * 100
     }
 
+    /// 今日盈亏(基于持仓昨收价 vs 实时价 × shares × fx)。
+    private var todayChange: (delta: Double, pct: Double) {
+        let rmap = rateMap
+        var current = 0.0
+        var prev = 0.0
+        for pos in positions {
+            let fx = rmap[pos.effectiveCurrency.rawValue] ?? 1.0
+            current += pos.shares * pos.lastPrice * fx
+            prev += pos.shares * pos.prevClosePrice * fx
+        }
+        let delta = current - prev
+        let cash = accounts.reduce(0.0) { sum, acc in
+            sum + acc.cashBalance * (rmap[acc.currency.rawValue] ?? 1.0)
+        }
+        let base = prev + cash
+        let pct = base > 0 ? delta / base * 100 : 0
+        return (delta, pct)
+    }
 
     /// 整体偏离度(从 RebalanceService 拿)
     private var overallDeviation: Double {
@@ -106,6 +124,9 @@ struct DashboardView: View {
 
                     AssetTrendCard(
                         snapshots: snapshots,
+                        totalAssetsCNY: breakdown.total,
+                        todayDelta: todayChange.delta,
+                        todayPct: todayChange.pct,
                         range: assetRangeBinding,
                         hideBalance: hideBalance
                     )
