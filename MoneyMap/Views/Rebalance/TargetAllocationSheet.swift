@@ -90,12 +90,16 @@ struct TargetAllocationSheet: View {
                         .background(Color.black.opacity(0.04))
                         .clipShape(Circle())
                 } else {
+                    // 走 AssetClass.allCases,保证 segments 顺序稳定,避免 SwiftUI
+                    // 重渲染时因 Dictionary.map 顺序非确定导致 donut 旋转。
                     DonutChart(
-                        segments: m.presetTargets.map { kv in
-                            DonutChart.DonutSegment(
-                                id: kv.key.rawValue,
-                                value: kv.value,
-                                color: Color(hex: kv.key.hexColor)
+                        segments: AssetClass.allCases.compactMap { cls -> DonutChart.DonutSegment? in
+                            let v = m.presetTargets[cls] ?? 0
+                            guard v > 0 else { return nil }
+                            return DonutChart.DonutSegment(
+                                id: cls.rawValue,
+                                value: v,
+                                color: Color(hex: cls.hexColor)
                             )
                         },
                         thickness: 9,
@@ -277,7 +281,7 @@ struct TargetAllocationSheet: View {
             Button {
                 save()
             } label: {
-                Text(ctaText)
+                Text("保存")
                     .font(.system(size: 17, weight: .bold))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
@@ -294,13 +298,6 @@ struct TargetAllocationSheet: View {
             .padding(.bottom, 14)
             .background(Theme.Palette.pageBgWarm)
         }
-    }
-
-    private var ctaText: String {
-        if isValid {
-            return "保存 · \(selectedModel.displayName)型"
-        }
-        return String(format: "总和需要 = 100% (当前 %.0f%%)", total)
     }
 
     // MARK: - load / apply / save
