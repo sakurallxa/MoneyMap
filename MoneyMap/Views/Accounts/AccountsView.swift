@@ -58,10 +58,10 @@ struct AccountsView: View {
                         summaryCard
 
                         if !investmentAccounts.isEmpty {
-                            sectionGroup(title: "投资账户", subtitle: "\(investmentAccounts.count) 个 · 合计 \(formatCNY(investmentTotal))", accounts: investmentAccounts)
+                            sectionGroup(title: "投资账户", count: investmentAccounts.count, total: investmentTotal, accounts: investmentAccounts)
                         }
                         if !cashAccounts.isEmpty {
-                            sectionGroup(title: "现金账户", subtitle: "\(cashAccounts.count) 个 · 合计 \(formatCNY(cashTotal))", accounts: cashAccounts)
+                            sectionGroup(title: "现金账户", count: cashAccounts.count, total: cashTotal, accounts: cashAccounts)
                         }
 
                         Spacer(minLength: 24)
@@ -101,9 +101,13 @@ struct AccountsView: View {
         }
     }
 
-    /// 顶部 summary 卡:投资类 + 现金类双列 + 占比 stacked bar
+    /// 顶部 summary 卡:按用途 · 投资类 + 现金类双列 + 占比 stacked bar
     private var summaryCard: some View {
-        VStack(spacing: 16) {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("按用途")
+                .font(.system(size: 11))
+                .foregroundStyle(.tertiary)
+
             HStack(alignment: .top, spacing: 0) {
                 summaryColumn(label: "投资类", value: investmentTotal, share: grandTotal > 0 ? investmentTotal / grandTotal : 0, color: Theme.Palette.accent)
                 Rectangle()
@@ -131,8 +135,8 @@ struct AccountsView: View {
             .clipShape(Capsule())
         }
         .padding(.horizontal, 18)
-        .padding(.vertical, 18)
-        .frame(maxWidth: .infinity)
+        .padding(.vertical, 16)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .fill(Color(.secondarySystemGroupedBackground))
@@ -165,23 +169,25 @@ struct AccountsView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func sectionGroup(title: String, subtitle: String, accounts: [Account]) -> some View {
+    private func sectionGroup(title: String, count: Int, total: Double, accounts: [Account]) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack {
+            HStack(alignment: .center, spacing: 6) {
                 Text(title)
-                    .font(.system(size: 11, weight: .bold))
-                    .kerning(1.2)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(.primary)
+                Text("\(count) 个")
+                    .font(.system(size: 12))
                     .foregroundStyle(.tertiary)
                 Spacer()
-                Text(hideBalance ? kHiddenAmountMask : subtitle)
-                    .font(.system(size: 11))
+                Text(hideBalance ? kHiddenAmountMask : formatCNY(total))
+                    .font(.system(size: 12, weight: .semibold))
+                    .monospacedDigit()
                     .foregroundStyle(.tertiary)
             }
             .padding(.horizontal, 8)
-            .padding(.top, 6)
 
-            VStack(spacing: 10) {
-                ForEach(accounts) { acc in
+            VStack(spacing: 0) {
+                ForEach(Array(accounts.enumerated()), id: \.element.id) { idx, acc in
                     NavigationLink {
                         AccountDetailView(account: acc)
                     } label: {
@@ -193,8 +199,19 @@ struct AccountsView: View {
                         )
                     }
                     .buttonStyle(.plain)
+
+                    if idx < accounts.count - 1 {
+                        Divider()
+                            .opacity(0.5)
+                            .padding(.leading, 70)
+                    }
                 }
             }
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(Color(.secondarySystemGroupedBackground))
+            )
+            .cardElevation()
         }
     }
 
@@ -295,11 +312,7 @@ struct AccountRow: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(.secondarySystemGroupedBackground))
-        )
-        .cardElevation()
+        .contentShape(Rectangle())
     }
 
     private var typeColor: Color {
