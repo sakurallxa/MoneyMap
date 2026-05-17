@@ -54,6 +54,15 @@ enum AccountType: String, Codable, CaseIterable {
     static var userSelectable: [AccountType] {
         [.cash, .moneyFund, .fundApp, .brokerA, .brokerHK, .brokerUS, .goldDeposit, .goldPhysical]
     }
+
+    /// 新建账户时按类型推荐的默认币种 — 港股=HKD,美股=USD,其他=CNY。
+    var defaultCurrency: CurrencyCode {
+        switch self {
+        case .brokerHK: return .hkd
+        case .brokerUS, .brokerHKUS: return .usd
+        default: return .cny
+        }
+    }
 }
 
 enum CurrencyCode: String, Codable, CaseIterable {

@@ -96,13 +96,9 @@ struct AddAccountSheet: View {
         let color = typeColor(t)
         return Button {
             type = t
-            // 港股 → HKD,美股 → USD,黄金 → CNY
-            switch t {
-            case .brokerHK: currency = .hkd
-            case .brokerUS: currency = .usd
-            case .goldDeposit, .goldPhysical: currency = .cny
-            default: break
-            }
+            // 切换类型时,币种总是同步到该类型的默认币种 —
+            // 港股→HKD / 美股→USD / 其他→CNY。
+            currency = t.defaultCurrency
         } label: {
             VStack(spacing: 6) {
                 ZStack {
@@ -120,6 +116,7 @@ struct AddAccountSheet: View {
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             }
+
             .frame(maxWidth: .infinity, minHeight: 78)
             .padding(.vertical, 8)
             .background(
