@@ -49,6 +49,16 @@
 		400000000000000000000034 /* RebalanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000034 /* RebalanceView.swift */; };
 		400000000000000000000035 /* TargetAllocationSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000035 /* TargetAllocationSheet.swift */; };
 		400000000000000000000036 /* AddTransactionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000036 /* AddTransactionSheet.swift */; };
+		400000000000000000000040 /* RangeTabsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000040 /* RangeTabsView.swift */; };
+		400000000000000000000041 /* MiniSparkline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000041 /* MiniSparkline.swift */; };
+		400000000000000000000042 /* DonutChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000042 /* DonutChart.swift */; };
+		400000000000000000000043 /* HeroPnLCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000043 /* HeroPnLCard.swift */; };
+		400000000000000000000044 /* TotalAssetsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000044 /* TotalAssetsCard.swift */; };
+		400000000000000000000045 /* AssetTrendCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000045 /* AssetTrendCard.swift */; };
+		400000000000000000000046 /* BreakdownDonutCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000046 /* BreakdownDonutCard.swift */; };
+		400000000000000000000047 /* TransactionTypePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000047 /* TransactionTypePickerView.swift */; };
+		400000000000000000000048 /* TransactionFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000048 /* TransactionFormView.swift */; };
+		400000000000000000000049 /* AmountInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000049 /* AmountInputView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -95,6 +105,16 @@
 		300000000000000000000034 /* RebalanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RebalanceView.swift; sourceTree = "<group>"; };
 		300000000000000000000035 /* TargetAllocationSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TargetAllocationSheet.swift; sourceTree = "<group>"; };
 		300000000000000000000036 /* AddTransactionSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTransactionSheet.swift; sourceTree = "<group>"; };
+		300000000000000000000040 /* RangeTabsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RangeTabsView.swift; sourceTree = "<group>"; };
+		300000000000000000000041 /* MiniSparkline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniSparkline.swift; sourceTree = "<group>"; };
+		300000000000000000000042 /* DonutChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DonutChart.swift; sourceTree = "<group>"; };
+		300000000000000000000043 /* HeroPnLCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeroPnLCard.swift; sourceTree = "<group>"; };
+		300000000000000000000044 /* TotalAssetsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TotalAssetsCard.swift; sourceTree = "<group>"; };
+		300000000000000000000045 /* AssetTrendCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetTrendCard.swift; sourceTree = "<group>"; };
+		300000000000000000000046 /* BreakdownDonutCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakdownDonutCard.swift; sourceTree = "<group>"; };
+		300000000000000000000047 /* TransactionTypePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionTypePickerView.swift; sourceTree = "<group>"; };
+		300000000000000000000048 /* TransactionFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionFormView.swift; sourceTree = "<group>"; };
+		300000000000000000000049 /* AmountInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmountInputView.swift; sourceTree = "<group>"; };
 		300000000000000000000099 /* MoneyMap.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MoneyMap.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -209,6 +229,9 @@
 				300000000000000000000023 /* Card.swift */,
 				300000000000000000000024 /* MetricRow.swift */,
 				300000000000000000000025 /* AmountText.swift */,
+				300000000000000000000040 /* RangeTabsView.swift */,
+				300000000000000000000041 /* MiniSparkline.swift */,
+				300000000000000000000042 /* DonutChart.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -217,6 +240,10 @@
 			isa = PBXGroup;
 			children = (
 				30000000000000000000000E /* DashboardView.swift */,
+				300000000000000000000043 /* HeroPnLCard.swift */,
+				300000000000000000000044 /* TotalAssetsCard.swift */,
+				300000000000000000000045 /* AssetTrendCard.swift */,
+				300000000000000000000046 /* BreakdownDonutCard.swift */,
 			);
 			path = Dashboard;
 			sourceTree = "<group>";
@@ -239,8 +266,19 @@
 			children = (
 				300000000000000000000010 /* TransactionsView.swift */,
 				300000000000000000000036 /* AddTransactionSheet.swift */,
+				300000000000000000000047 /* TransactionTypePickerView.swift */,
+				200000000000000000000020 /* Forms */,
 			);
 			path = Transactions;
+			sourceTree = "<group>";
+		};
+		200000000000000000000020 /* Forms */ = {
+			isa = PBXGroup;
+			children = (
+				300000000000000000000048 /* TransactionFormView.swift */,
+				300000000000000000000049 /* AmountInputView.swift */,
+			);
+			path = Forms;
 			sourceTree = "<group>";
 		};
 		20000000000000000000000A /* DCAPlans */ = {
@@ -381,6 +419,16 @@
 				400000000000000000000034 /* RebalanceView.swift in Sources */,
 				400000000000000000000035 /* TargetAllocationSheet.swift in Sources */,
 				400000000000000000000036 /* AddTransactionSheet.swift in Sources */,
+				400000000000000000000040 /* RangeTabsView.swift in Sources */,
+				400000000000000000000041 /* MiniSparkline.swift in Sources */,
+				400000000000000000000042 /* DonutChart.swift in Sources */,
+				400000000000000000000043 /* HeroPnLCard.swift in Sources */,
+				400000000000000000000044 /* TotalAssetsCard.swift in Sources */,
+				400000000000000000000045 /* AssetTrendCard.swift in Sources */,
+				400000000000000000000046 /* BreakdownDonutCard.swift in Sources */,
+				400000000000000000000047 /* TransactionTypePickerView.swift in Sources */,
+				400000000000000000000048 /* TransactionFormView.swift in Sources */,
+				400000000000000000000049 /* AmountInputView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

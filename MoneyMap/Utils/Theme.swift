@@ -33,18 +33,48 @@ enum Theme {
 
     enum Palette {
         static let accent = Color(hex: "#C8956D")
+        static let accentDark = Color(hex: "#A67849")
+        static let accentSoft = Color(hex: "#F5E9DC")
         static let heroAccent = Color(hex: "#C8956D")
 
         static let pnlUp = Color(hex: "#E63946")
         static let pnlDown = Color(hex: "#1B7F47")
 
-        static let segmentCash = Color(hex: "#6B8AFD")
-        static let segmentMoneyFund = Color(hex: "#9B7EE0")
-        static let segmentFund = Color(hex: "#E6B469")
+        // Hero (黑金) 内部用的高饱和色,在深色背景上有更好的可读性
+        static let heroAccentRed = Color(hex: "#FF8089")
+        static let heroAccentGreen = Color(hex: "#8FD99E")
+
+        // 暖色页面背景
+        static let pageBgWarm = Color(hex: "#F6F2EC")
+
+        static let segmentCash = Color(hex: "#5B8FF9")
+        static let segmentMoneyFund = Color(hex: "#7B68EE")
+        static let segmentFund = Color(hex: "#F4B860")
         static let segmentStockA = Color(hex: "#E63946")
         static let segmentStockHK = Color(hex: "#2A9D8F")
         static let segmentStockUS = Color(hex: "#1ABC9C")
+        static let segmentGold = Color(hex: "#D4AF37")
         static let segmentPending = Color(hex: "#A0A8B5")
+    }
+
+    /// 黑金 Hero 卡的三段渐变
+    static let heroBlackGoldGradient = LinearGradient(
+        stops: [
+            .init(color: Color(hex: "#16140F"), location: 0),
+            .init(color: Color(hex: "#221A11"), location: 0.45),
+            .init(color: Color(hex: "#2E2117"), location: 1)
+        ],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+}
+
+/// 卡片的双层阴影。比单层 shadow 更有层次。
+extension View {
+    func cardElevation() -> some View {
+        self
+            .shadow(color: .black.opacity(0.04), radius: 10, x: 0, y: 4)
+            .shadow(color: .black.opacity(0.025), radius: 22, x: 0, y: 10)
     }
 }
 

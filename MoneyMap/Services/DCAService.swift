@@ -76,7 +76,8 @@ enum DCAService {
         guard tx.type == .dcaDeduct, tx.status == .pending else { return }
         let cal = Calendar.current
         let dayDiff = cal.dateComponents([.day], from: cal.startOfDay(for: tx.tradeDate), to: cal.startOfDay(for: today)).day ?? 0
-        guard dayDiff >= 1 else { return }
+        // 改为 T+2 自动确认(扣款后第 2 个交易日按当日净值确认份额)
+        guard dayDiff >= 2 else { return }
 
         let targetAccount = accounts.first { $0.id == tx.toAccountID }
         let existingPosition = positions.first { $0.account?.id == tx.toAccountID && $0.assetCode == tx.assetCode }

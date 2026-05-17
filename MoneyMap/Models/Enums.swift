@@ -142,57 +142,62 @@ enum TransactionStatus: String, Codable, CaseIterable {
     }
 }
 
-/// 走势图粒度——每个数据点代表 1 天 / 1 周 / 1 月 / 1 年的市值。
+/// 走势图区间——选定后取该区间内的所有每日快照绘制成折线。
+/// 日 = 近 1 天;周 = 近 7 天;月 = 近 30 天;今年 = 自年初;全部 = 完整历史。
 enum TrendRange: String, CaseIterable {
     case day = "D"
     case week = "W"
     case month = "M"
-    case year = "Y"
+    case ytd = "YTD"
+    case all = "ALL"
 
     var displayName: String {
         switch self {
         case .day: return "日"
         case .week: return "周"
         case .month: return "月"
-        case .year: return "年"
+        case .ytd: return "今年"
+        case .all: return "全部"
         }
     }
 
-    /// 取过去多少天的数据。日:30 天;周:12 周;月:12 月;年:5 年。
-    var rangeDays: Int {
+    /// 区间开始日期。nil 表示不限(全部历史)。
+    var startDate: Date? {
+        let cal = Calendar.current
+        let now = Date()
         switch self {
-        case .day: return 30
-        case .week: return 12 * 7
-        case .month: return 365
-        case .year: return 5 * 365
+        case .day:
+            return cal.date(byAdding: .day, value: -1, to: now)
+        case .week:
+            return cal.date(byAdding: .day, value: -7, to: now)
+        case .month:
+            return cal.date(byAdding: .day, value: -30, to: now)
+        case .ytd:
+            return cal.date(from: cal.dateComponents([.year], from: now))
+        case .all:
+            return nil
         }
     }
 
-    var titleSuffix: String {
+    /// "本期变化" 行的 prefix
+    var changeLabelPrefix: String {
         switch self {
-        case .day: return "近 30 日"
-        case .week: return "近 12 周"
-        case .month: return "近 12 月"
-        case .year: return "近 5 年"
+        case .day: return "本日"
+        case .week: return "本周"
+        case .month: return "本月"
+        case .ytd: return "本年"
+        case .all: return "累计"
         }
     }
 
-    /// 聚合时按哪个时间分量分组。日不聚合。
-    var groupingComponent: Calendar.Component? {
+    /// 图表 X 轴标签步长。日太短不需要 X 轴标签。
+    var chartAxisStride: (Calendar.Component, Int)? {
         switch self {
         case .day: return nil
-        case .week: return .weekOfYear
-        case .month: return .month
-        case .year: return .year
-        }
-    }
-
-    var axisStride: (Calendar.Component, Int) {
-        switch self {
-        case .day: return (.day, 7)
-        case .week: return (.day, 14)
-        case .month: return (.month, 3)
-        case .year: return (.year, 1)
+        case .week: return (.day, 2)
+        case .month: return (.day, 7)
+        case .ytd: return (.month, 2)
+        case .all: return (.year, 1)
         }
     }
 }
