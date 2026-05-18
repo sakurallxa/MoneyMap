@@ -78,18 +78,17 @@ struct DCAPlansView: View {
             }
             .alignmentGuide(.firstTextBaseline) { d in d[.bottom] - 6 }
         }
-        .padding(.horizontal, 4)
     }
 
     private var listView: some View {
         List {
             Section {
                 headerRow
-                    .listRowInsets(EdgeInsets(top: 8, leading: 14, bottom: 4, trailing: 14))
+                    .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 10, trailing: 0))
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
                 amberBanner
-                    .listRowInsets(EdgeInsets(top: 4, leading: 14, bottom: 4, trailing: 14))
+                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 16, trailing: 0))
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
             }
@@ -101,7 +100,7 @@ struct DCAPlansView: View {
                             RoundedRectangle(cornerRadius: 18, style: .continuous)
                                 .fill(Color(.secondarySystemGroupedBackground))
                         )
-                        .listRowInsets(EdgeInsets(top: 14, leading: 16, bottom: 14, trailing: 16))
+                        .listRowInsets(EdgeInsets(top: 16, leading: 18, bottom: 16, trailing: 18))
                         .listRowSeparator(.hidden)
                         .contentShape(Rectangle())
                         .onTapGesture { editingPlan = plan }
@@ -129,7 +128,7 @@ struct DCAPlansView: View {
             }
         }
         .listStyle(.plain)
-        .listRowSpacing(8)
+        .listRowSpacing(12)
         .scrollContentBackground(.hidden)
         .contentMargins(.horizontal, 14, for: .scrollContent)
     }
