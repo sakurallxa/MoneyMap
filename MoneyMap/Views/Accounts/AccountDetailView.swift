@@ -69,10 +69,8 @@ struct AccountDetailView: View {
                             .listRowBackground(
                                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                                     .fill(Color(.secondarySystemGroupedBackground))
-                                    .padding(.horizontal, 14)
-                                    .padding(.vertical, 4)
                             )
-                            .listRowInsets(EdgeInsets(top: 12, leading: 28, bottom: 12, trailing: 28))
+                            .listRowInsets(EdgeInsets(top: 14, leading: 16, bottom: 14, trailing: 16))
                             .listRowSeparator(.hidden)
                             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                 Button(role: .destructive) {
@@ -95,7 +93,9 @@ struct AccountDetailView: View {
             }
         }
         .listStyle(.plain)
+        .listRowSpacing(8)
         .scrollContentBackground(.hidden)
+        .contentMargins(.horizontal, 14, for: .scrollContent)
         .background(Theme.Palette.pageBgWarm.ignoresSafeArea())
         .navigationTitle(account.name)
         .navigationBarTitleDisplayMode(.inline)

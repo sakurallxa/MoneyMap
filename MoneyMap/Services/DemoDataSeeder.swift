@@ -188,7 +188,54 @@ enum DemoDataSeeder {
             note: "港股买入"
         )
 
-        [tx1, tx2, tx3, tx4].forEach { context.insert($0) }
+        // 同一天多笔 — 测试 List 同日多 row 的视觉效果
+        let busyDay = cal.date(byAdding: .day, value: -2, to: today)!
+        let tx5 = TransactionRecord(
+            tradeDate: cal.date(byAdding: .hour, value: 9, to: busyDay)!,
+            type: .deposit,
+            status: .completed,
+            toAccountID: zhaoshang.id,
+            toAccountName: zhaoshang.name,
+            amount: 8000,
+            note: "工资入账"
+        )
+        let tx6 = TransactionRecord(
+            tradeDate: cal.date(byAdding: .hour, value: 10, to: busyDay)!,
+            type: .transfer,
+            status: .completed,
+            fromAccountID: zhaoshang.id,
+            toAccountID: yuEbao.id,
+            fromAccountName: zhaoshang.name,
+            toAccountName: yuEbao.name,
+            amount: 3000,
+            note: "转一部分到余额宝"
+        )
+        let tx7 = TransactionRecord(
+            tradeDate: cal.date(byAdding: .hour, value: 14, to: busyDay)!,
+            type: .buyFund,
+            status: .completed,
+            fromAccountID: zhaoshang.id,
+            toAccountID: aliFund.id,
+            fromAccountName: zhaoshang.name,
+            toAccountName: aliFund.name,
+            assetCode: "270002",
+            assetName: "广发稳健增长",
+            amount: 2000,
+            shares: 1234.5678,
+            price: 1.6201,
+            note: "手动加仓"
+        )
+        let tx8 = TransactionRecord(
+            tradeDate: cal.date(byAdding: .hour, value: 16, to: busyDay)!,
+            type: .withdraw,
+            status: .completed,
+            fromAccountID: zhaoshang.id,
+            fromAccountName: zhaoshang.name,
+            amount: 500,
+            note: "提现 ATM"
+        )
+
+        [tx1, tx2, tx3, tx4, tx5, tx6, tx7, tx8].forEach { context.insert($0) }
 
         seedSnapshots(context: context, today: today)
 

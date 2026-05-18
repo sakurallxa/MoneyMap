@@ -127,10 +127,8 @@ struct TransactionsView: View {
                                     .listRowBackground(
                                         RoundedRectangle(cornerRadius: 18, style: .continuous)
                                             .fill(Color(.secondarySystemGroupedBackground))
-                                            .padding(.horizontal, 14)
-                                            .padding(.vertical, 3)
                                     )
-                                    .listRowInsets(EdgeInsets(top: 14, leading: 30, bottom: 14, trailing: 30))
+                                    .listRowInsets(EdgeInsets(top: 14, leading: 16, bottom: 14, trailing: 16))
                                     .listRowSeparator(.hidden)
                                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                         Button(role: .destructive) {
@@ -152,7 +150,9 @@ struct TransactionsView: View {
                 }
             }
             .listStyle(.plain)
+            .listRowSpacing(8)
             .scrollContentBackground(.hidden)
+            .contentMargins(.horizontal, 14, for: .scrollContent)
             .background(Theme.Palette.pageBgWarm.ignoresSafeArea())
             .navigationBarHidden(true)
             .fullScreenCover(isPresented: $showPicker) {
