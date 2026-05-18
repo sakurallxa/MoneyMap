@@ -38,7 +38,10 @@ enum PriceService {
         guard let url = URL(string: "https://fundgz.1234567.com.cn/js/\(code).js?rt=\(ts)") else {
             throw PriceServiceError.invalidResponse
         }
-        let (data, _) = try await session.data(from: url)
+        let (data, response) = try await session.data(from: url)
+        let httpStatus = (response as? HTTPURLResponse)?.statusCode ?? -1
+        let preview = String(data: data, encoding: .utf8)?.prefix(200) ?? "<binary>"
+        print("📦 [Fund \(code)] HTTP \(httpStatus) bytes=\(data.count) body=\(preview)")
         guard let text = String(data: data, encoding: .utf8),
               let start = text.firstIndex(of: "{"),
               let end = text.lastIndex(of: "}")
@@ -148,7 +151,10 @@ enum PriceService {
         }
         var req = URLRequest(url: url)
         req.setValue("Mozilla/5.0", forHTTPHeaderField: "User-Agent")
-        let (data, _) = try await session.data(for: req)
+        let (data, response) = try await session.data(for: req)
+        let httpStatus = (response as? HTTPURLResponse)?.statusCode ?? -1
+        let preview = String(data: data, encoding: .utf8)?.prefix(300) ?? "<binary>"
+        print("📦 [US \(symbol)] HTTP \(httpStatus) bytes=\(data.count) body=\(preview)")
         guard let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let chart = obj["chart"] as? [String: Any],
               let results = chart["result"] as? [[String: Any]],
