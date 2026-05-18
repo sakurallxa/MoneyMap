@@ -17,7 +17,7 @@ struct ContentView: View {
             DashboardView()
                 .tag(0)
                 .tabItem {
-                    Label("总览", systemImage: "chart.pie.fill")
+                    Label("钱袋", systemImage: "chart.pie.fill")
                 }
 
             AccountsView()

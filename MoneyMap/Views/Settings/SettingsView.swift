@@ -29,7 +29,6 @@ struct SettingsView: View {
     @Query private var rates: [ExchangeRate]
 
     @AppStorage("userNickname") private var userNickname: String = ""
-    @AppStorage("hideBalance") private var hideBalance: Bool = false
     @AppStorage("iCloudSyncEnabled") private var iCloudEnabled = false
 
     @State private var showImporter = false
@@ -68,21 +67,11 @@ struct SettingsView: View {
                         .padding(.horizontal, 14)
                         .padding(.top, 8)
 
-                    settingsGroup(header: "显示与提醒") {
-                        SettingsRow(
-                            iconName: "eye.slash.fill",
-                            iconColor: Color(hex: "#5B8FF9"),
-                            title: "默认隐藏余额",
-                            trailing: .toggle($hideBalance)
-                        )
-                    }
-
                     settingsGroup(header: "桌面 Widget") {
                         SettingsRow(
                             iconName: "rectangle.stack.fill",
                             iconColor: Theme.Palette.accent,
-                            title: "添加资产 Widget",
-                            subtitle: "在桌面长按 · 一眼看总资产",
+                            title: "添加 Widget",
                             trailing: .chevron,
                             onTap: { showWidgetTutorial = true }
                         )
@@ -114,7 +103,7 @@ struct SettingsView: View {
                         )
                     }
 
-                    settingsGroup(header: "跨设备", footer: "开启后,换 iPhone 时数据自动同步。需要先在 Xcode 里启用 iCloud capability 才能生效;否则数据继续保存在本地。") {
+                    settingsGroup(header: "跨设备") {
                         SettingsRow(
                             iconName: "icloud.fill",
                             iconColor: Color(hex: "#5B8FF9"),
@@ -202,14 +191,9 @@ struct SettingsView: View {
                         .font(.system(size: 26, weight: .bold))
                         .foregroundStyle(.white)
                 }
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(displayNickname)
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundStyle(.primary)
-                    Text("跟随系统外观 · 红涨绿跌")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
-                }
+                Text(displayNickname)
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(.primary)
                 Spacer(minLength: 0)
                 Image(systemName: "chevron.right")
                     .font(.system(size: 12, weight: .semibold))

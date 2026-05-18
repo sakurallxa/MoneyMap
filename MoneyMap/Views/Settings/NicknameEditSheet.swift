@@ -34,7 +34,7 @@ struct NicknameEditSheet: View {
             VStack(spacing: 0) {
                 // 预览
                 VStack(spacing: 10) {
-                    Text("我们怎么称呼你?")
+                    Text("怎么称呼您?")
                         .font(.system(size: 13))
                         .foregroundStyle(.secondary)
                     Text(preview)
@@ -51,7 +51,7 @@ struct NicknameEditSheet: View {
                             .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(.secondary)
                         Spacer()
-                        TextField("如:陈", text: $surname)
+                        TextField("", text: $surname)
                             .font(.system(size: 17, weight: .semibold))
                             .multilineTextAlignment(.trailing)
                             .focused($isFocused)
