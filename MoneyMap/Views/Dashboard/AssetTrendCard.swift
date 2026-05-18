@@ -53,7 +53,7 @@ struct AssetTrendCard: View {
     private var topRow: some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
             Text(hideBalance ? "¥· · · · ·" : "¥\(formatNumber(totalAssetsCNY))")
-                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .font(.system(size: 22, weight: .bold))
                 .kerning(-0.5)
                 .monospacedDigit()
                 .foregroundStyle(.primary)

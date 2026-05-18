@@ -39,13 +39,13 @@ struct AmountInputView: View {
                         .foregroundStyle(color.opacity(0.85))
 
                     Text(amountParts.intPart)
-                        .font(.system(size: 56, weight: .heavy, design: .rounded))
+                        .font(.system(size: 56, weight: .heavy))
                         .kerning(-2)
                         .foregroundStyle(color)
 
                     if !amountParts.decPart.isEmpty {
                         Text(".\(amountParts.decPart)")
-                            .font(.system(size: 28, weight: .bold, design: .rounded))
+                            .font(.system(size: 28, weight: .bold))
                             .foregroundStyle(color.opacity(0.55))
                             .padding(.bottom, 4)
                     }

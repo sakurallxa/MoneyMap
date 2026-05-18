@@ -12,10 +12,10 @@ struct AmountText: View {
 
         var font: Font {
             switch self {
-            case .hero: return .system(size: 44, weight: .bold, design: .rounded)
-            case .large: return .system(size: 28, weight: .bold, design: .rounded)
-            case .medium: return .system(size: 17, weight: .semibold, design: .rounded)
-            case .small: return .system(size: 13, weight: .semibold, design: .rounded)
+            case .hero: return .system(size: 44, weight: .bold)
+            case .large: return .system(size: 28, weight: .bold)
+            case .medium: return .system(size: 17, weight: .semibold)
+            case .small: return .system(size: 13, weight: .semibold)
             }
         }
     }

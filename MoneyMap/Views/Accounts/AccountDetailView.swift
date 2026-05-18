@@ -283,7 +283,7 @@ struct AccountDetailView: View {
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundStyle(Color.white.opacity(0.72))
                 Text(hideBalance ? "· · · · ·" : formatNumber(totalValueCNY))
-                    .font(.system(size: 34, weight: .bold, design: .rounded))
+                    .font(.system(size: 34, weight: .bold))
                     .kerning(-0.8)
                     .monospacedDigit()
                     .foregroundStyle(.white)

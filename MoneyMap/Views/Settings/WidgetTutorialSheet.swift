@@ -104,7 +104,7 @@ struct WidgetTutorialSheet: View {
                     .fill(Theme.Palette.accent.opacity(0.12))
                     .frame(width: 38, height: 38)
                 Text("\(step.id)")
-                    .font(.system(size: 16, weight: .heavy, design: .rounded))
+                    .font(.system(size: 16, weight: .heavy))
                     .foregroundStyle(Theme.Palette.accentDark)
             }
             VStack(alignment: .leading, spacing: 5) {

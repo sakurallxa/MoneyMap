@@ -38,7 +38,7 @@ struct NicknameEditSheet: View {
                         .font(.system(size: 13))
                         .foregroundStyle(.secondary)
                     Text(preview)
-                        .font(.system(size: 38, weight: .bold, design: .rounded))
+                        .font(.system(size: 38, weight: .bold))
                         .foregroundStyle(Theme.Palette.accentDark)
                 }
                 .frame(maxWidth: .infinity)

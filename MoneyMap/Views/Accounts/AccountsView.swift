@@ -159,7 +159,7 @@ struct AccountsView: View {
                     .foregroundStyle(.secondary)
             }
             Text(hideBalance ? kHiddenAmountMask : formatCNY(value))
-                .font(.system(size: 20, weight: .bold, design: .rounded))
+                .font(.system(size: 20, weight: .bold))
                 .kerning(-0.4)
                 .monospacedDigit()
                 .lineLimit(1)

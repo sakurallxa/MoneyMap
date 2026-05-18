@@ -180,7 +180,7 @@ struct RebalanceView: View {
             // 大数字
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(String(format: "%.1f", overallDeviation))
-                    .font(.system(size: 44, weight: .heavy, design: .rounded))
+                    .font(.system(size: 44, weight: .heavy))
                     .kerning(-1)
                     .monospacedDigit()
                 Text("%")
