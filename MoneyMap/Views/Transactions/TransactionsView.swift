@@ -198,7 +198,7 @@ struct TransactionsView: View {
                     }
                 } label: {
                     HStack(spacing: 3) {
-                        Text(selectedYear.map { "\($0)" } ?? "全部")
+                        Text(selectedYear.map { "\($0) 年" } ?? "全部年份")
                             .font(.system(size: 13, weight: .semibold))
                         Image(systemName: "chevron.down")
                             .font(.system(size: 10, weight: .semibold))

@@ -252,18 +252,15 @@ struct TransactionRow: View {
                         .font(.system(size: 15, weight: .semibold))
                         .monospacedDigit()
                         .foregroundStyle(Color.pnlPositive)
-                    Text(hideAmount ? "净值 ¥····" : String(format: "净值 ¥%.4f", tx.price))
-                        .font(.system(size: 11))
-                        .foregroundStyle(.tertiary)
                 } else {
                     Text(hideAmount ? "¥····" : amountText)
                         .font(.system(size: 15, weight: .semibold))
                         .monospacedDigit()
                         .foregroundStyle(amountColor)
-                    Text(timeText)
-                        .font(.system(size: 11))
-                        .foregroundStyle(.tertiary)
                 }
+                Text(timeText)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.tertiary)
             }
         }
     }
