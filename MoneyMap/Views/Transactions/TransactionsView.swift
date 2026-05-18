@@ -102,15 +102,9 @@ struct TransactionsView: View {
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
                     filterStrip
-                        .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 8, trailing: 0))
+                        .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 12, trailing: 0))
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
-                    if !pendingTxs.isEmpty && filter != .completed {
-                        pendingBanner
-                            .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 16, trailing: 0))
-                            .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
-                    }
                 }
 
                 if groupedByDate.isEmpty {
@@ -304,37 +298,6 @@ struct TransactionsView: View {
             .clipShape(Capsule())
         }
         .buttonStyle(.plain)
-    }
-
-    private var pendingBanner: some View {
-        HStack(spacing: 12) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Color(hex: "#E89B2A"))
-                Image(systemName: "clock")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white)
-            }
-            .frame(width: 32, height: 32)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text("\(pendingTxs.count) 笔在途 · T+1/T+2 自动确认")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Color(hex: "#8A5A0F"))
-                Text("无需操作 · 确认后自动入仓并提醒你")
-                    .font(.system(size: 11))
-                    .foregroundStyle(Color(hex: "#A57628"))
-            }
-            Spacer()
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .background(
-            LinearGradient(colors: [Color(hex: "#FFF4DE"), Color(hex: "#FFEAD0")],
-                           startPoint: .topLeading, endPoint: .bottomTrailing)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .padding(.horizontal, 6)
     }
 
     private var emptyState: some View {
