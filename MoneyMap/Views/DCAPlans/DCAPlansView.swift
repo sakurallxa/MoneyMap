@@ -82,45 +82,56 @@ struct DCAPlansView: View {
     }
 
     private var listView: some View {
-        ScrollView {
-            VStack(spacing: 12) {
+        List {
+            Section {
                 headerRow
-                    .padding(.horizontal, 14)
-                    .padding(.top, 8)
-
+                    .listRowInsets(EdgeInsets(top: 8, leading: 14, bottom: 4, trailing: 14))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
                 amberBanner
-                    .padding(.horizontal, 14)
-                    .padding(.top, 4)
+                    .listRowInsets(EdgeInsets(top: 4, leading: 14, bottom: 4, trailing: 14))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+            }
 
-                LazyVStack(spacing: 12) {
-                    ForEach(plans) { plan in
-                        DCAPlanCard(plan: plan)
-                            .contentShape(Rectangle())
-                            .onTapGesture { editingPlan = plan }
-                            .contextMenu {
-                                Button {
-                                    editingPlan = plan
-                                } label: {
-                                    Label("编辑", systemImage: "pencil")
-                                }
-                                Button {
-                                    togglePause(plan)
-                                } label: {
-                                    Label(plan.isActive ? "暂停" : "启用",
-                                          systemImage: plan.isActive ? "pause.fill" : "play.fill")
-                                }
-                                Button(role: .destructive) {
-                                    deletePlan(plan)
-                                } label: {
-                                    Label("删除", systemImage: "trash")
-                                }
+            Section {
+                ForEach(plans) { plan in
+                    DCAPlanCard(plan: plan)
+                        .listRowBackground(
+                            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                .fill(Color(.secondarySystemGroupedBackground))
+                        )
+                        .listRowInsets(EdgeInsets(top: 14, leading: 16, bottom: 14, trailing: 16))
+                        .listRowSeparator(.hidden)
+                        .contentShape(Rectangle())
+                        .onTapGesture { editingPlan = plan }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button(role: .destructive) {
+                                deletePlan(plan)
+                            } label: {
+                                Label("删除", systemImage: "trash")
                             }
-                    }
+                            Button {
+                                togglePause(plan)
+                            } label: {
+                                Label(plan.isActive ? "暂停" : "启用",
+                                      systemImage: plan.isActive ? "pause.fill" : "play.fill")
+                            }
+                            .tint(.orange)
+                            Button {
+                                editingPlan = plan
+                            } label: {
+                                Label("编辑", systemImage: "pencil")
+                            }
+                            .tint(.blue)
+                        }
                 }
-                .padding(.horizontal, 14)
-                Spacer(minLength: 100)
             }
         }
+        .listStyle(.plain)
+        .listRowSpacing(8)
+        .scrollContentBackground(.hidden)
+        .contentMargins(.horizontal, 14, for: .scrollContent)
     }
 
     // 顶部琥珀色 banner
@@ -276,25 +287,21 @@ struct DCAPlanCard: View {
                 Spacer(minLength: 0)
             }
         }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color(.secondarySystemGroupedBackground))
-        )
-        .cardElevation()
         .opacity(dimmed ? 0.6 : 1.0)
     }
 
+    /// 状态胶囊 — 浅色底 + 深色文字,克制不抢眼。
     private var statusPill: some View {
         let isActive = plan.isActive
+        let bg: Color = isActive ? Color.pnlNegative.opacity(0.14) : Color.black.opacity(0.06)
+        let fg: Color = isActive ? Color.pnlNegative : .secondary
         return Text(isActive ? "进行中" : "已暂停")
-            .font(.system(size: 11, weight: .bold))
-            .foregroundStyle(.white)
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(fg)
             .padding(.horizontal, 9)
             .padding(.vertical, 3)
-            .background(isActive ? Color.pnlNegative : Color(.systemGray))
+            .background(bg)
             .clipShape(Capsule())
     }
 
@@ -303,7 +310,7 @@ struct DCAPlanCard: View {
         case .daily:    return "每天"
         case .weekly:   return "周" + WeekdayPicker.labels[max(0, min(6, plan.dayOfWeek - 1))]
         case .biweekly: return "双周" + WeekdayPicker.labels[max(0, min(6, plan.dayOfWeek - 1))]
-        case .monthly:  return "\(plan.dayOfMonth) 日"
+        case .monthly:  return "每月 \(plan.dayOfMonth) 日"
         }
     }
 
