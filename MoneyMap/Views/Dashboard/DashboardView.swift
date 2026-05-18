@@ -247,17 +247,10 @@ struct TransactionRow: View {
             Spacer(minLength: 8)
 
             VStack(alignment: .trailing, spacing: 3) {
-                if tx.type == .dcaConfirm {
-                    Text(hideAmount ? "+···· 份" : String(format: "+%.2f 份", tx.shares))
-                        .font(.system(size: 15, weight: .semibold))
-                        .monospacedDigit()
-                        .foregroundStyle(Color.pnlPositive)
-                } else {
-                    Text(hideAmount ? "¥····" : amountText)
-                        .font(.system(size: 15, weight: .semibold))
-                        .monospacedDigit()
-                        .foregroundStyle(amountColor)
-                }
+                Text(hideAmount ? "¥····" : amountText)
+                    .font(.system(size: 15, weight: .semibold))
+                    .monospacedDigit()
+                    .foregroundStyle(amountColor)
                 Text(timeText)
                     .font(.system(size: 11))
                     .foregroundStyle(.tertiary)

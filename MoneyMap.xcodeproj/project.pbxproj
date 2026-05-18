@@ -62,6 +62,7 @@
 		40000000000000000000004B /* ToastView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30000000000000000000004B /* ToastView.swift */; };
 		40000000000000000000004D /* NicknameEditSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30000000000000000000004D /* NicknameEditSheet.swift */; };
 		40000000000000000000004E /* WidgetTutorialSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30000000000000000000004E /* WidgetTutorialSheet.swift */; };
+		400000000000000000000050 /* TransactionReversalService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000050 /* TransactionReversalService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -121,6 +122,7 @@
 		30000000000000000000004B /* ToastView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToastView.swift; sourceTree = "<group>"; };
 		30000000000000000000004D /* NicknameEditSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NicknameEditSheet.swift; sourceTree = "<group>"; };
 		30000000000000000000004E /* WidgetTutorialSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetTutorialSheet.swift; sourceTree = "<group>"; };
+		300000000000000000000050 /* TransactionReversalService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionReversalService.swift; sourceTree = "<group>"; };
 		300000000000000000000099 /* MoneyMap.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MoneyMap.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -192,6 +194,7 @@
 				300000000000000000000030 /* DataImportService.swift */,
 				300000000000000000000031 /* WidgetState.swift */,
 				300000000000000000000033 /* RebalanceService.swift */,
+				300000000000000000000050 /* TransactionReversalService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -425,6 +428,7 @@
 				400000000000000000000031 /* WidgetState.swift in Sources */,
 				400000000000000000000032 /* TargetAllocation.swift in Sources */,
 				400000000000000000000033 /* RebalanceService.swift in Sources */,
+				400000000000000000000050 /* TransactionReversalService.swift in Sources */,
 				400000000000000000000034 /* RebalanceView.swift in Sources */,
 				400000000000000000000035 /* TargetAllocationSheet.swift in Sources */,
 				400000000000000000000036 /* AddTransactionSheet.swift in Sources */,

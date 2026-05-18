@@ -21,6 +21,7 @@ struct TransactionsView: View {
     @State private var selectedYear: Int? = nil
     @State private var searchText: String = ""
     @State private var showPicker = false
+    @State private var deleteCandidate: TransactionRecord? = nil
 
     private var availableYears: [Int] {
         let cal = Calendar.current
@@ -90,34 +91,103 @@ struct TransactionsView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 14) {
+            List {
+                Section {
                     headerRow
+                        .listRowInsets(EdgeInsets(top: 8, leading: 14, bottom: 4, trailing: 14))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
                     searchBar
+                        .listRowInsets(EdgeInsets(top: 6, leading: 14, bottom: 4, trailing: 14))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
                     filterStrip
-
+                        .listRowInsets(EdgeInsets(top: 4, leading: 14, bottom: 4, trailing: 14))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
                     if !pendingTxs.isEmpty && filter != .completed {
                         pendingBanner
+                            .listRowInsets(EdgeInsets(top: 6, leading: 14, bottom: 4, trailing: 14))
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
                     }
+                }
 
-                    if groupedByDate.isEmpty {
+                if groupedByDate.isEmpty {
+                    Section {
                         emptyState
-                    } else {
-                        ForEach(groupedByDate, id: \.date) { group in
-                            txGroupCard(date: group.date, items: group.items)
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                    }
+                } else {
+                    ForEach(groupedByDate, id: \.date) { group in
+                        Section {
+                            ForEach(group.items) { tx in
+                                TransactionRow(tx: tx, hideAmount: hideBalance)
+                                    .listRowBackground(
+                                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                            .fill(Color(.secondarySystemGroupedBackground))
+                                            .padding(.horizontal, 14)
+                                            .padding(.vertical, 3)
+                                    )
+                                    .listRowInsets(EdgeInsets(top: 14, leading: 30, bottom: 14, trailing: 30))
+                                    .listRowSeparator(.hidden)
+                                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                        Button(role: .destructive) {
+                                            deleteCandidate = tx
+                                        } label: {
+                                            Label(tx.status == .pending ? "取消" : "删除", systemImage: "trash")
+                                        }
+                                    }
+                            }
+                        } header: {
+                            Text(formatGroupDate(group.date))
+                                .font(.system(size: 11, weight: .bold))
+                                .kerning(1)
+                                .foregroundStyle(.tertiary)
+                                .textCase(nil)
+                                .padding(.leading, 6)
                         }
                     }
-
-                    Spacer(minLength: 30)
                 }
-                .padding(.horizontal, 14)
-                .padding(.top, 8)
             }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
             .background(Theme.Palette.pageBgWarm.ignoresSafeArea())
             .navigationBarHidden(true)
             .fullScreenCover(isPresented: $showPicker) {
                 TransactionTypePickerView()
             }
+            .alert("删除这笔交易?",
+                   isPresented: Binding(
+                    get: { deleteCandidate != nil },
+                    set: { if !$0 { deleteCandidate = nil } })
+            ) {
+                Button("取消", role: .cancel) { deleteCandidate = nil }
+                Button("删除", role: .destructive) {
+                    if let tx = deleteCandidate { performDelete(tx) }
+                    deleteCandidate = nil
+                }
+            } message: {
+                Text(deleteAlertMessage)
+            }
+        }
+    }
+
+    private var deleteAlertMessage: String {
+        guard let tx = deleteCandidate else { return "" }
+        if tx.status == .pending {
+            return "撤销该在途交易,扣款会回退到现金账户。"
+        }
+        return "持仓 / 账户余额会自动按这笔交易反向回退,保持数据一致。"
+    }
+
+    private func performDelete(_ tx: TransactionRecord) {
+        do {
+            try TransactionReversalService.deleteWithReversal(tx, context: context)
+            ToastManager.shared.success("已删除并回退资产")
+        } catch {
+            ToastManager.shared.error("删除失败", subtitle: error.localizedDescription)
         }
     }
 
@@ -280,46 +350,6 @@ struct TransactionsView: View {
                 .foregroundStyle(.tertiary)
         }
         .frame(maxWidth: .infinity, minHeight: 200)
-    }
-
-    private func txGroupCard(date: Date, items: [TransactionRecord]) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text(formatGroupDate(date))
-                .font(.system(size: 11, weight: .bold))
-                .kerning(1)
-                .foregroundStyle(.tertiary)
-                .padding(.horizontal, 20)
-                .padding(.top, 14)
-                .padding(.bottom, 8)
-
-            VStack(spacing: 0) {
-                ForEach(Array(items.enumerated()), id: \.element.id) { idx, tx in
-                    TransactionRow(tx: tx, hideAmount: hideBalance)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 12)
-                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                            if tx.status == .pending {
-                                Button(role: .destructive) {
-                                    context.delete(tx)
-                                    try? context.save()
-                                } label: {
-                                    Label("取消", systemImage: "xmark.circle")
-                                }
-                            }
-                        }
-                    if idx < items.count - 1 {
-                        Divider().opacity(0.4).padding(.leading, 60)
-                    }
-                }
-            }
-            .padding(.bottom, 8)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(Color(.secondarySystemGroupedBackground))
-        )
-        .cardElevation()
     }
 
     private func formatGroupDate(_ d: Date) -> String {
