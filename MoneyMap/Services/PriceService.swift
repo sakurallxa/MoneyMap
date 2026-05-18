@@ -145,7 +145,68 @@ enum PriceService {
 
     // MARK: - 美股行情 (Yahoo Finance)
     /// 接口: https://query1.finance.yahoo.com/v8/finance/chart/AAPL
+    /// 美股行情 — 国内推荐新浪 (gb_ 前缀),Yahoo 在国内常被 403。
+    /// 国内用户优先调 `fetchUSStockSina` (走 hq.sinajs.cn)。
+    static func fetchUSStockSina(symbol: String) async throws -> PriceQuoteResult {
+        let sym = "gb_" + symbol.lowercased()
+        guard let url = URL(string: "https://hq.sinajs.cn/list=\(sym)") else {
+            throw PriceServiceError.invalidResponse
+        }
+        var req = URLRequest(url: url)
+        req.setValue("https://finance.sina.com.cn", forHTTPHeaderField: "Referer")
+        req.setValue("Mozilla/5.0", forHTTPHeaderField: "User-Agent")
+        let (data, response) = try await session.data(for: req)
+        let httpStatus = (response as? HTTPURLResponse)?.statusCode ?? -1
+        let preview = String(data: data, encoding: .utf8)?.prefix(200) ?? "<binary>"
+        print("📦 [US-Sina \(symbol)] HTTP \(httpStatus) bytes=\(data.count) body=\(preview)")
+
+        // 解析 var hq_str_gb_aapl="苹果,300.23,0.68,时间,2.02,...";
+        guard let eqIdx = data.firstIndex(of: UInt8(ascii: "=")),
+              let firstQuoteRel = data[data.index(after: eqIdx)...].firstIndex(of: UInt8(ascii: "\"")),
+              let endQuoteRel = data[data.index(after: firstQuoteRel)...].firstIndex(of: UInt8(ascii: "\""))
+        else { throw PriceServiceError.parseFailed }
+
+        let contentStart = data.index(after: firstQuoteRel)
+        let contentEnd = endQuoteRel
+        let content = data[contentStart..<contentEnd]
+
+        var commas: [Data.Index] = []
+        var i = content.startIndex
+        while i < content.endIndex {
+            if content[i] == UInt8(ascii: ",") { commas.append(i) }
+            i = content.index(after: i)
+        }
+        guard commas.count >= 4 else { throw PriceServiceError.parseFailed }
+
+        func bytes(_ idx: Int) -> Data {
+            let s = idx == 0 ? content.startIndex : content.index(after: commas[idx - 1])
+            let e = idx < commas.count ? commas[idx] : content.endIndex
+            return Data(content[s..<e])
+        }
+        func partAscii(_ idx: Int) -> String? {
+            String(data: bytes(idx), encoding: .ascii)
+        }
+        func partGB(_ idx: Int) -> String? {
+            String(data: bytes(idx), encoding: .gb18030) ?? String(data: bytes(idx), encoding: .utf8)
+        }
+
+        // 新浪 gb_ 字段顺序:[0]中文名 [1]当前 [2]涨跌% [3]时间 [4]涨跌额 ...
+        guard let cStr = partAscii(1),
+              let curr = Double(cStr.trimmingCharacters(in: .whitespaces)),
+              curr > 0
+        else { throw PriceServiceError.parseFailed }
+
+        let changeAmt = (partAscii(4)?.trimmingCharacters(in: .whitespaces)).flatMap { Double($0) } ?? 0
+        let prev = curr - changeAmt
+        let name = partGB(0)?.trimmingCharacters(in: .whitespaces)
+
+        return PriceQuoteResult(price: curr, prevClose: prev, assetName: name)
+    }
+
     static func fetchUSStock(symbol: String) async throws -> PriceQuoteResult {
+        // 国内优先走新浪,Yahoo 在国内常 403。新浪失败再 fallback 到 Yahoo。
+        if let r = try? await fetchUSStockSina(symbol: symbol) { return r }
+
         guard let url = URL(string: "https://query1.finance.yahoo.com/v8/finance/chart/\(symbol)") else {
             throw PriceServiceError.invalidResponse
         }
@@ -154,7 +215,7 @@ enum PriceService {
         let (data, response) = try await session.data(for: req)
         let httpStatus = (response as? HTTPURLResponse)?.statusCode ?? -1
         let preview = String(data: data, encoding: .utf8)?.prefix(300) ?? "<binary>"
-        print("📦 [US \(symbol)] HTTP \(httpStatus) bytes=\(data.count) body=\(preview)")
+        print("📦 [US-Yahoo \(symbol)] HTTP \(httpStatus) bytes=\(data.count) body=\(preview)")
         guard let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let chart = obj["chart"] as? [String: Any],
               let results = chart["result"] as? [[String: Any]],
