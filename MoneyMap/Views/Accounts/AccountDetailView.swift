@@ -498,8 +498,31 @@ struct PositionRow: View {
                     valueWeight: .bold
                 )
                 cumulativeMetricRow
+                if daysSinceUpdate >= 7 {
+                    staleWarningRow
+                }
             }
         }
+    }
+
+    /// 上次更新距今天数 — 用于判断价格是否陈旧。
+    private var daysSinceUpdate: Int {
+        let cal = Calendar.current
+        return cal.dateComponents([.day], from: cal.startOfDay(for: position.updatedAt), to: cal.startOfDay(for: Date())).day ?? 0
+    }
+
+    /// 持仓行的"价格陈旧"警告 — 仅 ≥ 7 天才显示。
+    private var staleWarningRow: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "clock.badge.exclamationmark")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.orange)
+            Text("上次更新 \(daysSinceUpdate) 天前 · 建议手动更新价格")
+                .font(.system(size: 11))
+                .foregroundStyle(.orange)
+            Spacer()
+        }
+        .padding(.top, 2)
     }
 
     /// 累计盈亏专用行 — ¥ 与 % 拆成 2 个 Text,中间 6pt 间距,避免挤在一起。
