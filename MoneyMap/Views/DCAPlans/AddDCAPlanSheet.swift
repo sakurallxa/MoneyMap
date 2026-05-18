@@ -67,6 +67,8 @@ struct AddDCAPlanSheet: View {
                     section(title: "资产") {
                         codeRow
                         Divider().opacity(0.4).padding(.leading, 56)
+                        nameRow
+                        Divider().opacity(0.4).padding(.leading, 56)
                         amountRow
                     }
 
@@ -238,16 +240,29 @@ struct AddDCAPlanSheet: View {
                 .font(.system(size: 13))
                 .foregroundStyle(.secondary)
                 .frame(width: 64, alignment: .leading)
-            TextField("005827", text: $assetCode)
+            Spacer(minLength: 0)
+            TextField("如 005827 / AAPL", text: $assetCode)
                 .font(.system(size: 14, weight: .semibold))
                 .monospacedDigit()
                 .textInputAutocapitalization(.characters)
                 .autocorrectionDisabled()
+                .multilineTextAlignment(.trailing)
                 .focused($focusedField, equals: .code)
-            TextField("资产名称", text: $assetName)
-                .font(.system(size: 12))
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+    }
+
+    private var nameRow: some View {
+        HStack(spacing: 12) {
+            iconBadge(iconName: "textformat.alt", color: Color(hex: "#7B68EE"))
+            Text("资产名称")
+                .font(.system(size: 13))
                 .foregroundStyle(.secondary)
-                .frame(maxWidth: 110)
+                .frame(width: 64, alignment: .leading)
+            Spacer(minLength: 0)
+            TextField("输入代码后将自动同步", text: $assetName)
+                .font(.system(size: 14))
                 .multilineTextAlignment(.trailing)
                 .focused($focusedField, equals: .asset)
         }
