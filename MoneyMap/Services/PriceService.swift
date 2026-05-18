@@ -33,7 +33,16 @@ enum PriceService {
     // MARK: - 基金净值 (天天基金)
     /// 拉取基金估值,返回当前估值和前一日净值。
     /// 接口: https://fundgz.1234567.com.cn/js/{code}.js
+    /// 基金净值 — 天天基金优先,失败 fallback 到蛋卷(覆盖更广)。
     static func fetchFundNAV(code: String) async throws -> PriceQuoteResult {
+        // 1. 天天基金
+        if let r = try? await fetchFundNAVTianTian(code: code) { return r }
+        // 2. 蛋卷基金(天天没收录的基金,蛋卷常常有)
+        return try await fetchFundNAVDanjuan(code: code)
+    }
+
+    /// 天天基金净值 — fundgz.1234567.com.cn
+    static func fetchFundNAVTianTian(code: String) async throws -> PriceQuoteResult {
         let ts = Int(Date().timeIntervalSince1970 * 1000)
         guard let url = URL(string: "https://fundgz.1234567.com.cn/js/\(code).js?rt=\(ts)") else {
             throw PriceServiceError.invalidResponse
@@ -41,7 +50,7 @@ enum PriceService {
         let (data, response) = try await session.data(from: url)
         let httpStatus = (response as? HTTPURLResponse)?.statusCode ?? -1
         let preview = String(data: data, encoding: .utf8)?.prefix(200) ?? "<binary>"
-        print("📦 [Fund \(code)] HTTP \(httpStatus) bytes=\(data.count) body=\(preview)")
+        print("📦 [Fund-TTJJ \(code)] HTTP \(httpStatus) bytes=\(data.count) body=\(preview)")
         guard let text = String(data: data, encoding: .utf8),
               let start = text.firstIndex(of: "{"),
               let end = text.lastIndex(of: "}")
@@ -64,6 +73,52 @@ enum PriceService {
         }
         let derivedPrev = gszzl != 0 ? curr / (1 + gszzl / 100) : pv
         return PriceQuoteResult(price: curr, prevClose: derivedPrev, assetName: fundName)
+    }
+
+    /// 蛋卷基金净值(雪球旗下)— 覆盖天天基金没收录的代码,如 007911。
+    /// 串行两调:fund-info 拿名字,nav-history 拿最新净值 + 涨跌幅。
+    static func fetchFundNAVDanjuan(code: String) async throws -> PriceQuoteResult {
+        // 1. fund-info
+        var name: String? = nil
+        if let infoURL = URL(string: "https://danjuanfunds.com/djapi/fund/\(code)") {
+            var req = URLRequest(url: infoURL)
+            req.setValue("Mozilla/5.0", forHTTPHeaderField: "User-Agent")
+            if let (infoData, infoRes) = try? await session.data(for: req) {
+                let httpStatus = (infoRes as? HTTPURLResponse)?.statusCode ?? -1
+                let preview = String(data: infoData, encoding: .utf8)?.prefix(200) ?? "<binary>"
+                print("📦 [Fund-DJ-info \(code)] HTTP \(httpStatus) bytes=\(infoData.count) body=\(preview)")
+                if let obj = try? JSONSerialization.jsonObject(with: infoData) as? [String: Any],
+                   let dataDict = obj["data"] as? [String: Any] {
+                    name = dataDict["fd_name"] as? String
+                }
+            }
+        }
+
+        // 2. nav-history (size=1 拿最新一条)
+        guard let navURL = URL(string: "https://danjuanfunds.com/djapi/fund/nav/history/\(code)?size=1") else {
+            throw PriceServiceError.invalidResponse
+        }
+        var navReq = URLRequest(url: navURL)
+        navReq.setValue("Mozilla/5.0", forHTTPHeaderField: "User-Agent")
+        let (navData, navRes) = try await session.data(for: navReq)
+        let httpStatus = (navRes as? HTTPURLResponse)?.statusCode ?? -1
+        let preview = String(data: navData, encoding: .utf8)?.prefix(200) ?? "<binary>"
+        print("📦 [Fund-DJ-nav \(code)] HTTP \(httpStatus) bytes=\(navData.count) body=\(preview)")
+
+        guard let obj = try? JSONSerialization.jsonObject(with: navData) as? [String: Any],
+              let dataDict = obj["data"] as? [String: Any],
+              let items = dataDict["items"] as? [[String: Any]],
+              let latest = items.first
+        else { throw PriceServiceError.parseFailed }
+
+        let navStr = (latest["nav"] as? String) ?? (latest["value"] as? String)
+        let pctStr = latest["percentage"] as? String
+        guard let nStr = navStr, let curr = Double(nStr), curr > 0
+        else { throw PriceServiceError.parseFailed }
+
+        let pct = (pctStr.flatMap { Double($0) }) ?? 0
+        let prev = pct != 0 ? curr / (1 + pct / 100) : curr
+        return PriceQuoteResult(price: curr, prevClose: prev, assetName: name)
     }
 
     // MARK: - A 股行情 (新浪)
@@ -403,9 +458,46 @@ enum PriceService {
         return PriceQuoteResult(price: price, prevClose: prev, assetName: name)
     }
 
-    // MARK: - 汇率 (Yahoo Finance)
-    /// 例:USDCNY=X / HKDCNY=X
+    // MARK: - 汇率
+    /// 例:USDCNY → 美元转人民币;HKDCNY → 港币转人民币。
+    /// 新浪汇率优先(国内稳定),失败 fallback 到 Yahoo。
     static func fetchFXRate(from: CurrencyCode, to: CurrencyCode) async throws -> Double {
+        if from == to { return 1.0 }
+        if let r = try? await fetchFXRateSina(from: from, to: to) { return r }
+        return try await fetchFXRateYahoo(from: from, to: to)
+    }
+
+    /// 新浪汇率 — `hq.sinajs.cn/list=fx_susdcny` / `fx_shkdcny`
+    /// 格式:`var hq_str_fx_susdcny="时间,买1,卖1,中间价,持续秒,昨日开盘,日内高,日内低,..."`
+    static func fetchFXRateSina(from: CurrencyCode, to: CurrencyCode) async throws -> Double {
+        let pair = "fx_s\(from.rawValue.lowercased())\(to.rawValue.lowercased())"
+        guard let url = URL(string: "https://hq.sinajs.cn/list=\(pair)") else {
+            throw PriceServiceError.invalidResponse
+        }
+        var req = URLRequest(url: url)
+        req.setValue("https://finance.sina.com.cn", forHTTPHeaderField: "Referer")
+        req.setValue("Mozilla/5.0", forHTTPHeaderField: "User-Agent")
+        let (data, response) = try await session.data(for: req)
+        let httpStatus = (response as? HTTPURLResponse)?.statusCode ?? -1
+        let preview = String(data: data, encoding: .utf8)?.prefix(200) ?? "<binary>"
+        print("📦 [FX-Sina \(pair)] HTTP \(httpStatus) bytes=\(data.count) body=\(preview)")
+
+        guard let text = String(data: data, encoding: .utf8),
+              let firstQ = text.firstIndex(of: "\""),
+              let lastQ = text.lastIndex(of: "\""),
+              firstQ < lastQ
+        else { throw PriceServiceError.parseFailed }
+        let inner = text[text.index(after: firstQ)..<lastQ]
+        let parts = inner.split(separator: ",").map { String($0) }
+        // [0]时间 [1]买入价 [2]卖出价 [3]中间价 ... 取中间价(index 3)或买入价(1)
+        guard parts.count >= 4 else { throw PriceServiceError.parseFailed }
+        let raw = parts[1].trimmingCharacters(in: .whitespaces)
+        guard let rate = Double(raw), rate > 0 else { throw PriceServiceError.parseFailed }
+        return rate
+    }
+
+    /// Yahoo 汇率 — `USDCNY=X` 形式
+    static func fetchFXRateYahoo(from: CurrencyCode, to: CurrencyCode) async throws -> Double {
         if from == to { return 1.0 }
         let pair = "\(from.rawValue)\(to.rawValue)=X"
         guard let url = URL(string: "https://query1.finance.yahoo.com/v8/finance/chart/\(pair)") else {

@@ -124,15 +124,15 @@ struct SettingsView: View {
                     }
 
                     settingsGroup(header: "行情数据源") {
-                        SettingsRow(iconName: "chart.line.uptrend.xyaxis", iconColor: Color(hex: "#F4B860"), title: "基金净值", trailing: .info("天天基金"))
+                        SettingsRow(iconName: "chart.line.uptrend.xyaxis", iconColor: Color(hex: "#F4B860"), title: "基金净值", trailing: .info("天天 / 蛋卷"))
                         Divider().opacity(0.4).padding(.leading, 56)
-                        SettingsRow(iconName: "chart.bar.fill", iconColor: Color.pnlNegative, title: "A 股行情", trailing: .info("新浪 / 东方财富"))
+                        SettingsRow(iconName: "chart.bar.fill", iconColor: Color.pnlNegative, title: "A 股行情", trailing: .info("新浪财经"))
                         Divider().opacity(0.4).padding(.leading, 56)
-                        SettingsRow(iconName: "globe.asia.australia.fill", iconColor: Color(hex: "#1ABC9C"), title: "港美股行情", trailing: .info("雅虎财经"))
+                        SettingsRow(iconName: "globe.asia.australia.fill", iconColor: Color(hex: "#1ABC9C"), title: "港美股行情", trailing: .info("新浪 / 雅虎"))
                         Divider().opacity(0.4).padding(.leading, 56)
                         SettingsRow(iconName: "circle.hexagongrid.fill", iconColor: Color(hex: "#D4AF37"), title: "黄金现货", trailing: .info("上海黄金交易所"))
                         Divider().opacity(0.4).padding(.leading, 56)
-                        SettingsRow(iconName: "yensign.circle", iconColor: Color(hex: "#5B8FF9"), title: "汇率", trailing: .info("雅虎财经"))
+                        SettingsRow(iconName: "yensign.circle", iconColor: Color(hex: "#5B8FF9"), title: "汇率", trailing: .info("新浪 / 雅虎"))
                     }
 
                     settingsGroup(header: "关于") {
