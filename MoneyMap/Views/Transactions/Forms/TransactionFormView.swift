@@ -185,26 +185,69 @@ struct TransactionFormView: View {
         }
     }
 
-    private func fetchPrice(for code: String) async {
+    private func fetchPrice(for codeInput: String) async {
         await MainActor.run { isFetching = true }
         defer { Task { @MainActor in isFetching = false } }
-        do {
-            // 简化版:试基金接口,失败试 A 股
-            let result: PriceQuoteResult
-            if let f = try? await PriceService.fetchFundNAV(code: code) {
-                result = f
-            } else {
-                result = try await PriceService.fetchAShare(code: code)
-            }
+
+        let code = codeInput.uppercased().trimmingCharacters(in: .whitespaces)
+        guard !code.isEmpty else { return }
+
+        if let result = await dispatchFetch(code: code) {
             await MainActor.run {
                 priceText = String(format: "%.4f", result.price)
-                if newAssetName.isEmpty, let n = result.assetName {
+                if newAssetName.trimmingCharacters(in: .whitespaces).isEmpty,
+                   let n = result.assetName, !n.isEmpty {
                     newAssetName = n
                 }
             }
-        } catch {
-            // 静默失败
+        } else {
+            await MainActor.run {
+                ToastManager.shared.error("未找到代码「\(code)」",
+                                          subtitle: "可能是代码错误,或当前无网络。可手动填写")
+            }
         }
+    }
+
+    /// 根据代码格式智能 fallback 多个行情源,任一成功即返回。
+    /// 规则:
+    ///   - 6 位纯数字:基金 → A 股
+    ///   - 5 位纯数字 / 含 ".HK":港股
+    ///   - 含 ".US" / 纯字母:美股
+    ///   - 包含已知黄金代码:黄金现货
+    private func dispatchFetch(code: String) async -> PriceQuoteResult? {
+        // 黄金特例
+        if GoldRecognizer.isGoldAssetCode(code) {
+            if let r = try? await PriceService.fetchGoldSpotCNYPerGram() { return r }
+        }
+        // 港股
+        if code.hasSuffix(".HK") {
+            let c = code.replacingOccurrences(of: ".HK", with: "")
+            if let r = try? await PriceService.fetchHKStock(code: c) { return r }
+        }
+        // 美股
+        if code.hasSuffix(".US") {
+            let c = code.replacingOccurrences(of: ".US", with: "")
+            if let r = try? await PriceService.fetchUSStock(symbol: c) { return r }
+        }
+        // 5 位纯数字 — 港股惯例
+        if code.count == 5, code.allSatisfy({ $0.isNumber }) {
+            if let r = try? await PriceService.fetchHKStock(code: code) { return r }
+        }
+        // 6 位纯数字 — 基金 → A 股 fallback
+        if code.count == 6, code.allSatisfy({ $0.isNumber }) {
+            if let r = try? await PriceService.fetchFundNAV(code: code) { return r }
+            if let r = try? await PriceService.fetchAShare(code: code) { return r }
+        }
+        // 纯字母 — 美股
+        if code.allSatisfy({ $0.isLetter }) {
+            if let r = try? await PriceService.fetchUSStock(symbol: code) { return r }
+        }
+        // 最后兜底:依次试所有源(用户输入不规范时)
+        if let r = try? await PriceService.fetchFundNAV(code: code) { return r }
+        if let r = try? await PriceService.fetchAShare(code: code) { return r }
+        if let r = try? await PriceService.fetchHKStock(code: code) { return r }
+        if let r = try? await PriceService.fetchUSStock(symbol: code) { return r }
+        return nil
     }
 
 
