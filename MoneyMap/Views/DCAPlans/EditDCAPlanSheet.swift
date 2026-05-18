@@ -257,7 +257,7 @@ struct EditDCAPlanSheet: View {
 
     private var nameRow: some View {
         HStack(spacing: 12) {
-            iconBadge(iconName: "textformat.alt", color: Color(hex: "#7B68EE"))
+            iconBadge(iconName: "tag.fill", color: Color(hex: "#7B68EE"))
             Text("资产名称")
                 .font(.system(size: 13))
                 .foregroundStyle(.secondary)
