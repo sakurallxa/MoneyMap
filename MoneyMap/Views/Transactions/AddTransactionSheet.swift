@@ -119,7 +119,7 @@ struct AddTransactionSheet: View {
                                 Text("当前持有")
                                     .foregroundStyle(.secondary)
                                 Spacer()
-                                Text("\(CurrencyFormatter.shares(pos.shares)) 份 · \(pos.account?.name ?? "—")")
+                                Text("\(pos.effectiveCurrency.symbol)\(formatMarketValue(pos.marketValue)) · \(pos.account?.name ?? "—")")
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
                             }
@@ -214,6 +214,15 @@ struct AddTransactionSheet: View {
                 }
             }
         }
+    }
+
+    /// 市值格式 — 千分位 + 2 位小数,前缀由调用方拼 currency symbol。
+    private func formatMarketValue(_ v: Double) -> String {
+        let f = NumberFormatter()
+        f.numberStyle = .decimal
+        f.minimumFractionDigits = 2
+        f.maximumFractionDigits = 2
+        return f.string(from: NSNumber(value: v)) ?? String(format: "%.2f", v)
     }
 
     private func autoSelectDefaults() {
