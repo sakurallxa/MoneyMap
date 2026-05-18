@@ -76,14 +76,21 @@ enum DCAService {
         guard tx.type == .dcaDeduct, tx.status == .pending else { return }
         let cal = Calendar.current
         let dayDiff = cal.dateComponents([.day], from: cal.startOfDay(for: tx.tradeDate), to: cal.startOfDay(for: today)).day ?? 0
-        // 改为 T+2 自动确认(扣款后第 2 个交易日按当日净值确认份额)
+        // T+2 最少需要 2 个自然日 — 但仅当价格在交易日之后刷新过(说明市场真的开过盘)才能确认。
+        // 这样自动跳过周末和节假日 — 节假日不开盘 → PriceRefreshService 拿不到新数据 →
+        // Position.updatedAt 不会推进到 tx.tradeDate 之后 → 保持 pending,等到下个交易日再 confirm。
         guard dayDiff >= 2 else { return }
 
         let targetAccount = accounts.first { $0.id == tx.toAccountID }
         let existingPosition = positions.first { $0.account?.id == tx.toAccountID && $0.assetCode == tx.assetCode }
 
-        let confirmPrice = existingPosition?.lastPrice ?? 1.0
-        guard confirmPrice > 0 else { return }
+        // 必须存在 position 且价格在 tradeDate 之后被刷新过,否则等下一轮
+        guard let referencePosition = existingPosition,
+              referencePosition.updatedAt > tx.tradeDate,
+              referencePosition.lastPrice > 0
+        else { return }
+
+        let confirmPrice = referencePosition.lastPrice
         let confirmedShares = tx.amount / confirmPrice
 
         tx.statusRaw = TransactionStatus.confirmed.rawValue

@@ -86,6 +86,8 @@ struct TransactionFormView: View {
 
                     typeHero
 
+                    fundFlowCard
+
                     secondaryFields
 
                     Spacer(minLength: 110)
@@ -114,13 +116,15 @@ struct TransactionFormView: View {
                 }
             }
             ToolbarItemGroup(placement: .keyboard) {
-                Spacer()
-                Button {
-                    focusedField = nil
-                } label: {
-                    Text("完成")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(Theme.Palette.accentDark)
+                if focusedField != nil {
+                    Spacer()
+                    Button {
+                        focusedField = nil
+                    } label: {
+                        Text("完成")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundStyle(Theme.Palette.accentDark)
+                    }
                 }
             }
         }
@@ -218,6 +222,73 @@ struct TransactionFormView: View {
         }
     }
 
+    /// 资金来源 / 资金去向卡 — 在 4 类资产交易表单中统一展示现金账户选择器。
+    /// - buyExisting / buyNew: 「资金来源」(钱从哪个现金账户出)
+    /// - sell / dividend:     「资金去向」(钱到哪个现金账户)
+    /// - deposit/withdraw/transfer 已自带账户选择,这里不渲染
+    @ViewBuilder
+    private var fundFlowCard: some View {
+        switch type {
+        case .buyExisting, .buyNew:
+            cashAccountFlowRow(label: "资金来源", prefix: "从")
+        case .sell, .dividend:
+            cashAccountFlowRow(label: "资金去向", prefix: "到")
+        case .deposit, .withdraw, .transfer:
+            EmptyView()
+        }
+    }
+
+    private func cashAccountFlowRow(label: String, prefix: String) -> some View {
+        HStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color(hex: "#5B8FF9").opacity(0.16))
+                Image(systemName: selectedCashAccount?.type.iconName ?? "creditcard.fill")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color(hex: "#5B8FF9"))
+            }
+            .frame(width: 32, height: 32)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(label)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.tertiary)
+                Text("\(prefix) \(selectedCashAccount?.name ?? "请选择")")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.primary)
+            }
+
+            Spacer()
+
+            Menu {
+                ForEach(cashAccounts) { acc in
+                    Button(acc.name) { selectedCashAccountID = acc.id }
+                }
+            } label: {
+                HStack(spacing: 3) {
+                    Text("切换")
+                        .font(.system(size: 12, weight: .semibold))
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 10, weight: .semibold))
+                }
+                .foregroundStyle(Theme.Palette.accentDark)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(
+                    Capsule().fill(Theme.Palette.accent.opacity(0.12))
+                )
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color(.secondarySystemGroupedBackground))
+        )
+        .cardElevation()
+    }
+
     private var existingAssetHero: some View {
         VStack(alignment: .leading, spacing: 0) {
             if let pos = selectedPosition {
@@ -245,13 +316,20 @@ struct TransactionFormView: View {
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
                         }
-                        Text(String(format: "现价 ¥%.4f", pos.lastPrice))
-                            .font(.system(size: 11))
-                            .foregroundStyle(.tertiary)
+                        // 「现价 + 份额」合并到信息区(灰字),清晰传达"持有信息"
+                        HStack(spacing: 6) {
+                            Text(String(format: "现价 ¥%.4f", pos.lastPrice))
+                            Text("·")
+                            Text(String(format: "持 %.2f 份", pos.shares))
+                                .monospacedDigit()
+                        }
+                        .font(.system(size: 11))
+                        .foregroundStyle(.tertiary)
                     }
 
                     Spacer()
 
+                    // 「切换」独立操作 — chevron + 文字
                     Menu {
                         ForEach(positions) { p in
                             Button(p.assetName) {
@@ -259,14 +337,18 @@ struct TransactionFormView: View {
                             }
                         }
                     } label: {
-                        VStack(alignment: .trailing, spacing: 2) {
-                            Text(String(format: "%.2f 份", pos.shares))
-                                .font(.system(size: 13, weight: .semibold))
-                                .monospacedDigit()
+                        HStack(spacing: 3) {
                             Text("切换")
-                                .font(.system(size: 11))
-                                .foregroundStyle(Theme.Palette.accentDark)
+                                .font(.system(size: 12, weight: .semibold))
+                            Image(systemName: "chevron.down")
+                                .font(.system(size: 10, weight: .semibold))
                         }
+                        .foregroundStyle(Theme.Palette.accentDark)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(
+                            Capsule().fill(Theme.Palette.accent.opacity(0.12))
+                        )
                     }
                 }
                 .padding(16)
@@ -303,33 +385,8 @@ struct TransactionFormView: View {
                         .scaleEffect(0.8)
                 }
             }
-            TextField("资产名称(自动获取或手动填)", text: $newAssetName)
+            TextField("资产名称(输入代码后将自动同步)", text: $newAssetName)
                 .font(.system(size: 14))
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("买入价 ¥")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                    TextField("0.0000", text: $priceText)
-                        .keyboardType(.decimalPad)
-                        .font(.system(size: 15, weight: .semibold))
-                        .monospacedDigit()
-                }
-                Spacer()
-                Menu {
-                    ForEach(cashAccounts) { acc in
-                        Button(acc.name) { selectedCashAccountID = acc.id }
-                    }
-                } label: {
-                    HStack(spacing: 4) {
-                        Text("从 " + (selectedCashAccount?.name ?? "—"))
-                            .font(.system(size: 12, weight: .semibold))
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: 10))
-                    }
-                    .foregroundStyle(Theme.Palette.accentDark)
-                }
-            }
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -464,14 +521,12 @@ struct TransactionFormView: View {
             switch type {
             case .buyExisting, .sell:
                 triangleCard
-                triangleHintRow
                 Divider().opacity(0.4).padding(.leading, 18)
                 dateField
                 Divider().opacity(0.4).padding(.leading, 18)
                 noteField
             case .buyNew:
                 triangleCard
-                triangleHintRow
                 Divider().opacity(0.4).padding(.leading, 18)
                 dateField
                 Divider().opacity(0.4).padding(.leading, 18)
@@ -522,7 +577,7 @@ struct TransactionFormView: View {
                 text: $priceText,
                 suffix: "¥/份",
                 placeholder: "0.0000",
-                hint: "自动从行情同步 · 可手动覆盖"
+                hint: "自动从行情同步 · 可手动输入"
             )
         }
     }
@@ -595,15 +650,6 @@ struct TransactionFormView: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
         .background(locked ? Theme.Palette.accent.opacity(0.05) : Color.clear)
-    }
-
-    private var triangleHintRow: some View {
-        Text("点击任意字段 → 该字段变为「手动」,其余两个自动重算")
-            .font(.system(size: 10))
-            .foregroundStyle(.tertiary)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 18)
-            .padding(.vertical, 10)
     }
 
     private func singleFieldRow(label: String, value: Binding<String>, suffix: String, placeholder: String) -> some View {

@@ -8,14 +8,6 @@ struct AmountInputView: View {
     @State private var cursorOn = true
     @FocusState private var isFocused: Bool
 
-    private var sign: String {
-        switch type.moneyDirection {
-        case .out: return "−"
-        case .in: return "+"
-        case .neutral: return ""
-        }
-    }
-
     private var color: Color {
         switch type.moneyDirection {
         case .out: return .pnlPositive
@@ -42,11 +34,6 @@ struct AmountInputView: View {
             ZStack {
                 // 可视层 — 不接收点击,让 tap 穿透到底下的 TextField
                 HStack(alignment: .firstTextBaseline, spacing: 2) {
-                    if !sign.isEmpty {
-                        Text(sign)
-                            .font(.system(size: 28, weight: .bold))
-                            .foregroundStyle(color.opacity(0.6))
-                    }
                     Text("¥")
                         .font(.system(size: 26, weight: .bold))
                         .foregroundStyle(color.opacity(0.85))
@@ -85,11 +72,6 @@ struct AmountInputView: View {
             .onTapGesture {
                 isFocused = true
             }
-
-            Text(isFocused ? "数字键盘已打开 · 输入完成可点旁边任意处收起" : "点击数字输入 · 自动从行情同步价格")
-                .font(.system(size: 11))
-                .foregroundStyle(.tertiary)
-                .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 14)

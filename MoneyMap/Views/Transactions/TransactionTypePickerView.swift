@@ -29,8 +29,8 @@ enum TransactionFormType: Hashable {
         case .buyNew: return "新资产 · 自动建仓"
         case .sell: return "减仓或清仓"
         case .dividend: return "基金分红、股票派息"
-        case .deposit: return "往账户转入"
-        case .withdraw: return "从账户提取"
+        case .deposit: return "记录一笔进账(工资 / 收入)"
+        case .withdraw: return "记录一笔出账(消费 / 还款)"
         case .transfer: return "在你的账户之间挪钱"
         }
     }
@@ -184,6 +184,7 @@ struct TransactionTypePickerView: View {
                 RoundedRectangle(cornerRadius: 22, style: .continuous)
                     .fill(Color(.secondarySystemGroupedBackground))
             )
+            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
             .cardElevation()
         }
         .buttonStyle(.plain)

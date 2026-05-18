@@ -92,6 +92,7 @@ struct TransactionsView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 14) {
+                    headerRow
                     searchBar
                     filterStrip
 
@@ -113,34 +114,41 @@ struct TransactionsView: View {
                 .padding(.top, 8)
             }
             .background(Theme.Palette.pageBgWarm.ignoresSafeArea())
-            .navigationTitle("交易")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Text(navSubtitle)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showPicker = true
-                    } label: {
-                        ZStack {
-                            Circle()
-                                .fill(Theme.Palette.accent)
-                                .frame(width: 36, height: 36)
-                            Image(systemName: "plus")
-                                .font(.system(size: 17, weight: .semibold))
-                                .foregroundStyle(.white)
-                        }
-                        .shadow(color: Theme.Palette.accent.opacity(0.3), radius: 8, x: 0, y: 4)
-                    }
-                }
-            }
+            .navigationBarHidden(true)
             .fullScreenCover(isPresented: $showPicker) {
                 TransactionTypePickerView()
             }
         }
+    }
+
+    /// 顶部:交易标题 + 月度小字 + 右侧「+」按钮(与标题同基线)
+    private var headerRow: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Text("交易")
+                .font(.system(size: 32, weight: .bold))
+                .foregroundStyle(.primary)
+            Text(navSubtitle)
+                .font(.system(size: 14))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+            Spacer()
+            Button {
+                showPicker = true
+            } label: {
+                ZStack {
+                    Circle()
+                        .fill(Theme.Palette.accent)
+                        .frame(width: 36, height: 36)
+                    Image(systemName: "plus")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(.white)
+                }
+                .shadow(color: Theme.Palette.accent.opacity(0.3), radius: 8, x: 0, y: 4)
+            }
+            .alignmentGuide(.firstTextBaseline) { d in d[.bottom] - 6 }
+        }
+        .padding(.horizontal, 4)
     }
 
     private var navSubtitle: String {
