@@ -126,6 +126,16 @@
 		300000000000000000000099 /* MoneyMap.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MoneyMap.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFrameworksBuildPhase section */
+		500000000000000000000002 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
 /* Begin PBXGroup section */
 		100000000000000000000002 = {
 			isa = PBXGroup;
@@ -224,29 +234,6 @@
 			path = Views;
 			sourceTree = "<group>";
 		};
-		20000000000000000000000E /* Rebalance */ = {
-			isa = PBXGroup;
-			children = (
-				300000000000000000000034 /* RebalanceView.swift */,
-				300000000000000000000035 /* TargetAllocationSheet.swift */,
-			);
-			path = Rebalance;
-			sourceTree = "<group>";
-		};
-		20000000000000000000000D /* Components */ = {
-			isa = PBXGroup;
-			children = (
-				300000000000000000000023 /* Card.swift */,
-				300000000000000000000024 /* MetricRow.swift */,
-				300000000000000000000025 /* AmountText.swift */,
-				300000000000000000000040 /* RangeTabsView.swift */,
-				300000000000000000000041 /* MiniSparkline.swift */,
-				300000000000000000000042 /* DonutChart.swift */,
-				30000000000000000000004B /* ToastView.swift */,
-			);
-			path = Components;
-			sourceTree = "<group>";
-		};
 		200000000000000000000007 /* Dashboard */ = {
 			isa = PBXGroup;
 			children = (
@@ -282,15 +269,6 @@
 			path = Transactions;
 			sourceTree = "<group>";
 		};
-		200000000000000000000020 /* Forms */ = {
-			isa = PBXGroup;
-			children = (
-				300000000000000000000048 /* TransactionFormView.swift */,
-				300000000000000000000049 /* AmountInputView.swift */,
-			);
-			path = Forms;
-			sourceTree = "<group>";
-		};
 		20000000000000000000000A /* DCAPlans */ = {
 			isa = PBXGroup;
 			children = (
@@ -317,6 +295,38 @@
 				300000000000000000000014 /* Preview Assets.xcassets */,
 			);
 			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		20000000000000000000000D /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				300000000000000000000023 /* Card.swift */,
+				300000000000000000000024 /* MetricRow.swift */,
+				300000000000000000000025 /* AmountText.swift */,
+				300000000000000000000040 /* RangeTabsView.swift */,
+				300000000000000000000041 /* MiniSparkline.swift */,
+				300000000000000000000042 /* DonutChart.swift */,
+				30000000000000000000004B /* ToastView.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		20000000000000000000000E /* Rebalance */ = {
+			isa = PBXGroup;
+			children = (
+				300000000000000000000034 /* RebalanceView.swift */,
+				300000000000000000000035 /* TargetAllocationSheet.swift */,
+			);
+			path = Rebalance;
+			sourceTree = "<group>";
+		};
+		200000000000000000000020 /* Forms */ = {
+			isa = PBXGroup;
+			children = (
+				300000000000000000000048 /* TransactionFormView.swift */,
+				300000000000000000000049 /* AmountInputView.swift */,
+			);
+			path = Forms;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -450,16 +460,6 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
-/* Begin PBXFrameworksBuildPhase section */
-		500000000000000000000002 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXFrameworksBuildPhase section */
-
 /* Begin XCBuildConfiguration section */
 		700000000000000000000001 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -586,6 +586,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"MoneyMap/Preview Content\"";
+				DEVELOPMENT_TEAM = PXGH48DJS9;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "钱袋";
@@ -616,6 +617,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"MoneyMap/Preview Content\"";
+				DEVELOPMENT_TEAM = PXGH48DJS9;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "钱袋";

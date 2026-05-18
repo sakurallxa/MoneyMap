@@ -219,39 +219,49 @@ struct TransactionFormView: View {
     ///   - 含 ".US" / 纯字母:美股
     ///   - 包含已知黄金代码:黄金现货
     private func dispatchFetch(code: String) async -> PriceQuoteResult? {
-        // 黄金特例
+        print("🔍 [Fetch] dispatch start code=\(code)")
+
         if GoldRecognizer.isGoldAssetCode(code) {
-            if let r = try? await PriceService.fetchGoldSpotCNYPerGram() { return r }
+            if let r = await tryFetch(tag: "gold spot", op: { try await PriceService.fetchGoldSpotCNYPerGram() }) { return r }
         }
-        // 港股
         if code.hasSuffix(".HK") {
             let c = code.replacingOccurrences(of: ".HK", with: "")
-            if let r = try? await PriceService.fetchHKStock(code: c) { return r }
+            if let r = await tryFetch(tag: "HK \(c)", op: { try await PriceService.fetchHKStock(code: c) }) { return r }
         }
-        // 美股
         if code.hasSuffix(".US") {
             let c = code.replacingOccurrences(of: ".US", with: "")
-            if let r = try? await PriceService.fetchUSStock(symbol: c) { return r }
+            if let r = await tryFetch(tag: "US \(c)", op: { try await PriceService.fetchUSStock(symbol: c) }) { return r }
         }
-        // 5 位纯数字 — 港股惯例
         if code.count == 5, code.allSatisfy({ $0.isNumber }) {
-            if let r = try? await PriceService.fetchHKStock(code: code) { return r }
+            if let r = await tryFetch(tag: "HK 5-digit \(code)", op: { try await PriceService.fetchHKStock(code: code) }) { return r }
         }
-        // 6 位纯数字 — 基金 → A 股 fallback
         if code.count == 6, code.allSatisfy({ $0.isNumber }) {
-            if let r = try? await PriceService.fetchFundNAV(code: code) { return r }
-            if let r = try? await PriceService.fetchAShare(code: code) { return r }
+            if let r = await tryFetch(tag: "Fund \(code)", op: { try await PriceService.fetchFundNAV(code: code) }) { return r }
+            if let r = await tryFetch(tag: "A-share \(code)", op: { try await PriceService.fetchAShare(code: code) }) { return r }
         }
-        // 纯字母 — 美股
         if code.allSatisfy({ $0.isLetter }) {
-            if let r = try? await PriceService.fetchUSStock(symbol: code) { return r }
+            if let r = await tryFetch(tag: "US letters \(code)", op: { try await PriceService.fetchUSStock(symbol: code) }) { return r }
         }
-        // 最后兜底:依次试所有源(用户输入不规范时)
-        if let r = try? await PriceService.fetchFundNAV(code: code) { return r }
-        if let r = try? await PriceService.fetchAShare(code: code) { return r }
-        if let r = try? await PriceService.fetchHKStock(code: code) { return r }
-        if let r = try? await PriceService.fetchUSStock(symbol: code) { return r }
+        // 兜底:依次试所有源
+        if let r = await tryFetch(tag: "fallback Fund", op: { try await PriceService.fetchFundNAV(code: code) }) { return r }
+        if let r = await tryFetch(tag: "fallback A-share", op: { try await PriceService.fetchAShare(code: code) }) { return r }
+        if let r = await tryFetch(tag: "fallback HK", op: { try await PriceService.fetchHKStock(code: code) }) { return r }
+        if let r = await tryFetch(tag: "fallback US", op: { try await PriceService.fetchUSStock(symbol: code) }) { return r }
+
+        print("🔍 [Fetch] all sources failed for code=\(code)")
         return nil
+    }
+
+    /// 单源试探 + 日志 — 成功打印 ✅,失败打印 ❌ 及错误。
+    private func tryFetch(tag: String, op: () async throws -> PriceQuoteResult) async -> PriceQuoteResult? {
+        do {
+            let r = try await op()
+            print("✅ [Fetch:\(tag)] price=\(r.price) name=\(r.assetName ?? "-")")
+            return r
+        } catch {
+            print("❌ [Fetch:\(tag)] error=\(error)")
+            return nil
+        }
     }
 
 
