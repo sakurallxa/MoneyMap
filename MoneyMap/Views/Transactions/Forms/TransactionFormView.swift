@@ -133,6 +133,9 @@ struct TransactionFormView: View {
         }
         .onChange(of: newAssetCode) { _, _ in
             if type == .buyNew {
+                // 代码变更:清空上次的名称和价格,避免新代码 fetch 失败时残留旧资产
+                newAssetName = ""
+                priceText = ""
                 scheduleFetch()
             }
         }
