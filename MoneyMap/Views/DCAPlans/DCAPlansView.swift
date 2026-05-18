@@ -30,37 +30,18 @@ struct DCAPlansView: View {
         NavigationStack {
             Group {
                 if plans.isEmpty {
-                    emptyView
+                    VStack(spacing: 0) {
+                        headerRow
+                            .padding(.horizontal, 14)
+                            .padding(.top, 8)
+                        emptyView
+                    }
                 } else {
                     listView
                 }
             }
             .background(Theme.Palette.pageBgWarm.ignoresSafeArea())
-            .navigationTitle("")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    VStack(spacing: 1) {
-                        Text("定投")
-                            .font(.system(size: 16, weight: .bold))
-                        Text(navSubtitle)
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showAddSheet = true
-                    } label: {
-                        Image(systemName: "plus")
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 30, height: 30)
-                            .background(Theme.Palette.accent)
-                            .clipShape(Circle())
-                    }
-                }
-            }
+            .navigationBarHidden(true)
             .sheet(isPresented: $showAddSheet) {
                 AddDCAPlanSheet()
             }
@@ -70,9 +51,43 @@ struct DCAPlansView: View {
         }
     }
 
+    /// 顶部:定投标题 + 月度小字 + 右侧「+」按钮(与 Dashboard/账户/交易 一致)
+    private var headerRow: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Text("定投")
+                .font(.system(size: 32, weight: .bold))
+                .foregroundStyle(.primary)
+            Text(navSubtitle)
+                .font(.system(size: 14))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+            Spacer()
+            Button {
+                showAddSheet = true
+            } label: {
+                ZStack {
+                    Circle()
+                        .fill(Theme.Palette.accent)
+                        .frame(width: 36, height: 36)
+                    Image(systemName: "plus")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(.white)
+                }
+                .shadow(color: Theme.Palette.accent.opacity(0.3), radius: 8, x: 0, y: 4)
+            }
+            .alignmentGuide(.firstTextBaseline) { d in d[.bottom] - 6 }
+        }
+        .padding(.horizontal, 4)
+    }
+
     private var listView: some View {
         ScrollView {
             VStack(spacing: 12) {
+                headerRow
+                    .padding(.horizontal, 14)
+                    .padding(.top, 8)
+
                 amberBanner
                     .padding(.horizontal, 14)
                     .padding(.top, 4)
@@ -117,7 +132,7 @@ struct DCAPlansView: View {
                 .frame(width: 30, height: 30)
                 .background(Theme.Palette.accent)
                 .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
-            Text("到期当日系统自动扣款生成交易,T+2 自动确认份额 · 你无需操作")
+            Text("到期当日自动生成定投记录,T+N 确认份额,更新总资产和收益数据")
                 .font(.system(size: 12))
                 .foregroundStyle(Theme.Palette.accentDark)
                 .lineSpacing(2)
@@ -143,7 +158,7 @@ struct DCAPlansView: View {
                 .foregroundStyle(.tertiary)
             Text("还没有定投计划")
                 .font(.headline)
-            Text("点击右上角 + 创建,系统会自动扣款并 T+2 自动确认份额")
+            Text("点击右上角 + 创建,到期当日会自动生成定投记录")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
