@@ -115,6 +115,7 @@ struct TransactionTypePickerView: View {
                 }
             }
         }
+        .overlay(ToastOverlayView())
     }
 
     private var todayLabel: String {

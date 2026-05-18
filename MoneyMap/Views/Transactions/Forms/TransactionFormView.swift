@@ -205,8 +205,9 @@ struct TransactionFormView: View {
             }
         } else {
             await MainActor.run {
-                ToastManager.shared.error("未找到代码「\(code)」",
-                                          subtitle: "可能是代码错误,或当前无网络。可手动填写")
+                // 用 .info 而非 .error — 这是验证类轻提示,需要自动消失。
+                ToastManager.shared.info("未找到代码「\(code)」",
+                                         subtitle: "可手动填写资产名称和价格")
             }
         }
     }
