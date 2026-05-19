@@ -433,19 +433,16 @@ enum PriceService {
     }
 
     /// 拉取上海黄金交易所 Au99.99 现货价 — 通过东方财富 push2 接口。
-    /// 接口示例: https://push2.eastmoney.com/api/qt/stock/get?secid=119.Au99_99
-    /// 返回字段: f43=最新价(×10^f59), f60=昨收, f59=小数位
-    ///
-    /// 历史上 EM 把上金所现货归在不同 market id 下,因此多个 secid 候选都试一遍,
-    /// 命中第一个成功的就返回。日志会标记每次 hit / miss。
+    /// 真实工作的 secid 通过 clist 接口探到:market id 是 118(上金所),symbol 是大写 AU9999。
+    /// 例: https://push2.eastmoney.com/api/qt/stock/get?secid=118.AU9999
+    /// 返回: {"data":{"f43":99888,"f57":"AU9999","f58":"黄金9999","f59":2,"f60":99969}}
+    /// f43=最新价(×10^f59), f60=昨收, f59=小数位
     static func fetchSGEAu9999() async throws -> PriceQuoteResult {
+        // 用真实工作的 SGE 代码;周末 / 收盘 AU9999 的 f43 可能为 0,所以 AUTD 也试。
         let candidates = [
-            "119.Au99_99",  // 上金所市场代码(最新)
-            "119.Au99.99",  // 偶见点号变体
-            "47.Au99_99",   // 商品期货旧路径
-            "47.au99_99",   // 小写变体
-            "0.Au9999",     // 兜底
-            "7.AU0",        // T+0 黄金主连
+            "118.AU9999",  // 黄金9999 现货 — 主用
+            "118.AUTD",    // 黄金 T+D — 收盘 / AU9999 没数据时兜底
+            "118.AU100",   // 黄金100g 实物
         ]
         var lastError: Error?
         for secid in candidates {
@@ -461,11 +458,12 @@ enum PriceService {
         throw lastError ?? PriceServiceError.parseFailed
     }
 
-    /// SGE / 新浪 — `hq.sinajs.cn/list=gds_AU99_99`
-    /// 返回格式:`var hq_str_gds_AU99_99="Au99.99,O,H,L,P,close,...,date,...";`
-    /// 字段顺序在不同版本略有差异,这里按"找第一个 > 0 的数字当现价"做容错。
+    /// SGE / 新浪 — `hq.sinajs.cn/list=nf_AU0`(沪金期货主力 = AU 主连,与 Au99.99 同人民币 / 克口径)。
+    /// 旧的 `gds_AU99_99` 已被新浪下线(返回空字符串)。
+    /// 内盘期货 nf_ 标准字段(逗号分隔):
+    /// [0]名称 [1]时间 [2]开 [3]高 [4]低 [5]昨结 [6]买 [7]卖 [8]最新 [9]结算 [10]昨收 ...
     static func fetchSinaSGEAu9999() async throws -> PriceQuoteResult {
-        guard let url = URL(string: "https://hq.sinajs.cn/list=gds_AU99_99") else {
+        guard let url = URL(string: "https://hq.sinajs.cn/list=nf_AU0") else {
             throw PriceServiceError.invalidResponse
         }
         var req = URLRequest(url: url)
@@ -476,9 +474,8 @@ enum PriceService {
             debugLog("[Gold/Sina] HTTP \(http.statusCode), body=\(String(data: data.prefix(200), encoding: .utf8) ?? "<binary>")")
             throw PriceServiceError.invalidResponse
         }
-        let text = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .gb18030) ?? ""
+        let text = String(data: data, encoding: .gb18030) ?? String(data: data, encoding: .utf8) ?? ""
         debugLog("[Gold/Sina] raw body=\(text.prefix(200))")
-        // 提取双引号之间的内容
         guard let firstQuote = text.firstIndex(of: "\""),
               let lastQuote = text.lastIndex(of: "\""),
               firstQuote < lastQuote else {
@@ -486,18 +483,21 @@ enum PriceService {
         }
         let payload = text[text.index(after: firstQuote)..<lastQuote]
         let parts = payload.split(separator: ",", omittingEmptySubsequences: false).map(String.init)
-        guard parts.count >= 4 else {
-            debugLog("[Gold/Sina] too few fields (\(parts.count)); fields=\(parts)")
+        guard parts.count >= 11 else {
+            debugLog("[Gold/Sina] too few fields (\(parts.count)); fields=\(parts.prefix(12))")
             throw PriceServiceError.parseFailed
         }
-        // gds_ 现货格式: [0]名称 [1]开盘 [2]昨收 [3]当前 [4]最高 [5]最低 ...
         let name = parts[0].trimmingCharacters(in: .whitespaces)
-        guard let prev = Double(parts[2]), let price = Double(parts[3]), price > 0 else {
-            debugLog("[Gold/Sina] parse num fail; parts=\(parts.prefix(8))")
+        // [8] 最新价, [10] 昨收 — 收盘 / 非交易时段 [8] 可能为 0,fallback 用 [9] 结算价
+        let priceCandidates: [Double] = [Double(parts[8]) ?? 0, Double(parts[9]) ?? 0, Double(parts[7]) ?? 0]
+        guard let price = priceCandidates.first(where: { $0 > 0 }) else {
+            debugLog("[Gold/Sina] no positive price; parts=\(parts.prefix(12))")
             throw PriceServiceError.parseFailed
         }
+        let prev = Double(parts[10]) ?? Double(parts[5]) ?? price
         debugLog("[Gold/Sina] price=\(price) prev=\(prev) name=\(name)")
-        return PriceQuoteResult(price: price, prevClose: prev, assetName: name.isEmpty ? "黄金 Au99.99" : name)
+        let displayName = name.isEmpty ? "沪金主连(Au)" : name
+        return PriceQuoteResult(price: price, prevClose: prev, assetName: displayName)
     }
 
     private static func fetchEastmoneyQuote(secid: String, fallbackName: String) async throws -> PriceQuoteResult {
