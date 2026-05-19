@@ -391,18 +391,28 @@ enum PriceService {
     }
 
     // MARK: - 黄金现货 (上海黄金交易所 Au99.99, CNY/克)
-    /// 主源:上海黄金交易所 Au99.99(通过东方财富 API,JSON 格式)
-    /// 备源:Yahoo `GC=F`(NYMEX 期货 USD/oz)换算
+    /// 链路:
+    /// ① SGE / EM push2 多 secid 尝试(国内最稳)
+    /// ② SGE / Sina gds_Au99_99(EM 风控时兜底)
+    /// ③ Yahoo `GC=F` 期货 USD/oz × USDCNY → CNY/g(海外兜底)
     static func fetchGoldSpotCNYPerGram() async throws -> PriceQuoteResult {
-        // 优先用 SGE 实时现货
+        // ① SGE / EM
         do {
             let sge = try await fetchSGEAu9999()
-            debugLog("[Gold] ✓ SGE main source OK: \(sge.price) CNY/g, name=\(sge.assetName ?? "?")")
+            debugLog("[Gold] ✓ SGE/EM OK: \(sge.price) CNY/g, name=\(sge.assetName ?? "?")")
             return sge
         } catch {
-            debugLog("[Gold] ✗ SGE main source FAILED: \(error). Falling back to Yahoo GC=F.")
+            debugLog("[Gold] ✗ SGE/EM failed: \(error). Trying Sina SGE.")
         }
-        // 备用:Yahoo 黄金期货换算
+        // ② SGE / Sina
+        do {
+            let sina = try await fetchSinaSGEAu9999()
+            debugLog("[Gold] ✓ SGE/Sina OK: \(sina.price) CNY/g, name=\(sina.assetName ?? "?")")
+            return sina
+        } catch {
+            debugLog("[Gold] ✗ SGE/Sina failed: \(error). Trying Yahoo GC=F.")
+        }
+        // ③ Yahoo
         do {
             async let goldUSDPerOz = fetchUSStock(symbol: "GC=F")
             async let usdToCNY = fetchFXRate(from: .usd, to: .cny)
@@ -417,16 +427,26 @@ enum PriceService {
                 assetName: "黄金现货(国际折算)"
             )
         } catch {
-            debugLog("[Gold] ✗ Yahoo fallback FAILED: \(error). All sources exhausted.")
+            debugLog("[Gold] ✗ Yahoo fallback failed: \(error). All sources exhausted.")
             throw error
         }
     }
 
     /// 拉取上海黄金交易所 Au99.99 现货价 — 通过东方财富 push2 接口。
-    /// 接口示例: https://push2.eastmoney.com/api/qt/stock/get?secid=47.Au99_99
+    /// 接口示例: https://push2.eastmoney.com/api/qt/stock/get?secid=119.Au99_99
     /// 返回字段: f43=最新价(×10^f59), f60=昨收, f59=小数位
+    ///
+    /// 历史上 EM 把上金所现货归在不同 market id 下,因此多个 secid 候选都试一遍,
+    /// 命中第一个成功的就返回。日志会标记每次 hit / miss。
     static func fetchSGEAu9999() async throws -> PriceQuoteResult {
-        let candidates = ["47.Au99_99", "8.Au99_99", "118.Au99_99"]
+        let candidates = [
+            "119.Au99_99",  // 上金所市场代码(最新)
+            "119.Au99.99",  // 偶见点号变体
+            "47.Au99_99",   // 商品期货旧路径
+            "47.au99_99",   // 小写变体
+            "0.Au9999",     // 兜底
+            "7.AU0",        // T+0 黄金主连
+        ]
         var lastError: Error?
         for secid in candidates {
             do {
@@ -439,6 +459,45 @@ enum PriceService {
             }
         }
         throw lastError ?? PriceServiceError.parseFailed
+    }
+
+    /// SGE / 新浪 — `hq.sinajs.cn/list=gds_AU99_99`
+    /// 返回格式:`var hq_str_gds_AU99_99="Au99.99,O,H,L,P,close,...,date,...";`
+    /// 字段顺序在不同版本略有差异,这里按"找第一个 > 0 的数字当现价"做容错。
+    static func fetchSinaSGEAu9999() async throws -> PriceQuoteResult {
+        guard let url = URL(string: "https://hq.sinajs.cn/list=gds_AU99_99") else {
+            throw PriceServiceError.invalidResponse
+        }
+        var req = URLRequest(url: url)
+        req.setValue("https://finance.sina.com.cn", forHTTPHeaderField: "Referer")
+        req.setValue("Mozilla/5.0", forHTTPHeaderField: "User-Agent")
+        let (data, response) = try await session.data(for: req)
+        if let http = response as? HTTPURLResponse, http.statusCode != 200 {
+            debugLog("[Gold/Sina] HTTP \(http.statusCode), body=\(String(data: data.prefix(200), encoding: .utf8) ?? "<binary>")")
+            throw PriceServiceError.invalidResponse
+        }
+        let text = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .gb18030) ?? ""
+        debugLog("[Gold/Sina] raw body=\(text.prefix(200))")
+        // 提取双引号之间的内容
+        guard let firstQuote = text.firstIndex(of: "\""),
+              let lastQuote = text.lastIndex(of: "\""),
+              firstQuote < lastQuote else {
+            throw PriceServiceError.parseFailed
+        }
+        let payload = text[text.index(after: firstQuote)..<lastQuote]
+        let parts = payload.split(separator: ",", omittingEmptySubsequences: false).map(String.init)
+        guard parts.count >= 4 else {
+            debugLog("[Gold/Sina] too few fields (\(parts.count)); fields=\(parts)")
+            throw PriceServiceError.parseFailed
+        }
+        // gds_ 现货格式: [0]名称 [1]开盘 [2]昨收 [3]当前 [4]最高 [5]最低 ...
+        let name = parts[0].trimmingCharacters(in: .whitespaces)
+        guard let prev = Double(parts[2]), let price = Double(parts[3]), price > 0 else {
+            debugLog("[Gold/Sina] parse num fail; parts=\(parts.prefix(8))")
+            throw PriceServiceError.parseFailed
+        }
+        debugLog("[Gold/Sina] price=\(price) prev=\(prev) name=\(name)")
+        return PriceQuoteResult(price: price, prevClose: prev, assetName: name.isEmpty ? "黄金 Au99.99" : name)
     }
 
     private static func fetchEastmoneyQuote(secid: String, fallbackName: String) async throws -> PriceQuoteResult {
@@ -471,7 +530,10 @@ enum PriceService {
             throw PriceServiceError.parseFailed
         }
         guard let info = root["data"] as? [String: Any] else {
-            debugLog("[Gold/EM] secid=\(secid) no `data` key; root keys=\(Array(root.keys))")
+            // data 字段存在但不是 dict — 通常是 null,说明 secid 错了。
+            // 打印 data 字段的真实值方便对账。
+            let dataVal = root["data"]
+            debugLog("[Gold/EM] secid=\(secid) `data` not dict; actual=\(String(describing: dataVal)) type=\(dataVal.map { String(describing: type(of: $0)) } ?? "nil")")
             throw PriceServiceError.parseFailed
         }
 
