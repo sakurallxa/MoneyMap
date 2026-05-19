@@ -105,7 +105,7 @@ struct AddPositionSheet: View {
                 Button("合并加仓") { mergeIntoExisting() }
                 Button("取消", role: .cancel) { duplicateExisting = nil }
             } message: {
-                Text("已有 \(String(format: "%.2f", duplicateExisting?.shares ?? 0)) 份。合并将累加份额并按金额加权重算成本。")
+                Text("已有 \(String(format: "%.2f", duplicateExisting?.shares ?? 0.0)) 份。合并将累加份额并按金额加权重算成本。")
             }
         }
     }

@@ -260,7 +260,7 @@ struct TargetAllocationSheet: View {
             )
             .tint(Color(hex: cls.hexColor))
             .disabled(!editable)
-            Text(String(format: "%.0f%%", percents[cls] ?? 0))
+            Text(String(format: "%.0f%%", percents[cls] ?? 0.0))
                 .font(.system(size: 15, weight: .heavy))
                 .monospacedDigit()
                 .foregroundStyle(editable ? .primary : .secondary)
