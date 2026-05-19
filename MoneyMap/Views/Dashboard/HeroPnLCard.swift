@@ -6,7 +6,7 @@ import SwiftUI
 ///   金箔 hairline
 ///   主数字:¥ + 米→金 gradient 数字
 ///   金菱形分隔符
-///   2 格 metric:左 = 累计盈亏 + 累计%;右 = 持仓浮盈估算(未计入现金流)
+///   2 格 metric:左 = 累计盈亏 + 累计%;右 = 年化收益率(CAGR,首笔交易至今)
 struct HeroPnLCard: View {
     let totalAssetsCNY: Double
     let totalPnL: Double
@@ -255,13 +255,34 @@ struct HeroPnLCard: View {
             : "累计盈亏 \(totalPnL.accessibilityAmountLabel(prefix: isUp ? "盈利" : "亏损")) · \(totalPnLPct.accessibilityPercentLabel())")
     }
 
-    /// 右格 · 持仓浮盈估算(基于持仓成本/市值,未计入现金流)
+    /// 距离首笔交易过去的天数(nil 代表完全没交易)。
+    /// 用于决定:① 标题用"年化收益率"还是"累计回报" ② 副标显示天数。
+    private var daysSinceFirstTx: Int? {
+        guard let earliestDate else { return nil }
+        return Calendar.current.dateComponents([.day], from: earliestDate, to: Date()).day
+    }
+
+    /// 不足 30 天时 DashboardView 直接返回累计百分比(避免短期复利炸天)。
+    /// 这里跟着用同一阈值,标题切到"累计回报"以与值的真实含义对齐 — 不能在
+    /// 30 天内显示"年化"却给出累计数字,会误导用户。
+    private var isAnnualizedMeaningful: Bool {
+        (daysSinceFirstTx ?? 0) >= 30
+    }
+
+    /// 右格 · 年化收益率(CAGR,从首笔交易至今)/ 累计回报(< 30 天)
     private var annualizedCell: some View {
         let cellColor: Color = annualizedPct >= 0
             ? Theme.Palette.heroAccentRed
             : Theme.Palette.heroAccentGreen
+        let title = isAnnualizedMeaningful ? "年化收益率" : "累计回报"
+        let subtitle: String = {
+            guard let d = daysSinceFirstTx else { return "暂无交易记录" }
+            return isAnnualizedMeaningful
+                ? "首笔交易 \(d) 天前"
+                : "首笔交易 \(d) 天前 · 不足 30 天暂不年化"
+        }()
         return VStack(alignment: .leading, spacing: 6) {
-            Text("持仓浮盈估算")
+            Text(title)
                 .font(Theme.TypeToken.label(11))
                 .foregroundStyle(Color.white.opacity(0.6))
 
@@ -282,7 +303,7 @@ struct HeroPnLCard: View {
                     .baselineOffset(0.5)
             }
 
-            Text("未计入现金流")
+            Text(subtitle)
                 .font(.system(size: 10, weight: .medium))
                 .foregroundStyle(Color.white.opacity(0.45))
                 .lineLimit(1)
@@ -293,8 +314,8 @@ struct HeroPnLCard: View {
         .background(glassCellBackground)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(hideBalance
-            ? "持仓浮盈估算 已隐藏"
-            : "持仓浮盈估算 \(annualizedPct.accessibilityPercentLabel()) 未计入现金流")
+            ? "\(title) 已隐藏"
+            : "\(title) \(annualizedPct.accessibilityPercentLabel()) · \(subtitle)")
     }
 
     // MARK: - helpers
