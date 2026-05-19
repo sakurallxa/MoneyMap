@@ -112,9 +112,9 @@ enum DateUtil {
 }
 
 /// 全局统一掩码字符串(hideBalance 启用时显示)。
-/// 5 个全角间隔点 — 视觉上比 `****` 更高级
-let kHiddenAmountMask = "¥ · · · · ·"
-let kHiddenPercentMask = "·· %"
+/// 转发到 Theme.HiddenMask 单一来源(P0-004),保留变量名只是为了减少调用点改动。
+let kHiddenAmountMask = Theme.HiddenMask.amount
+let kHiddenPercentMask = Theme.HiddenMask.percent
 
 extension Double {
     /// 货币格式(带千分位 + ¥ + 2 位小数),支持 hideBalance 一键掩码。

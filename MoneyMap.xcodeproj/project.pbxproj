@@ -31,7 +31,6 @@
 		400000000000000000000022 /* DCAService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000022 /* DCAService.swift */; };
 		400000000000000000000023 /* Card.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000023 /* Card.swift */; };
 		400000000000000000000024 /* MetricRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000024 /* MetricRow.swift */; };
-		400000000000000000000025 /* AmountText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000025 /* AmountText.swift */; };
 		400000000000000000000026 /* AccountDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000026 /* AccountDetailView.swift */; };
 		400000000000000000000027 /* AddAccountSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000027 /* AddAccountSheet.swift */; };
 		400000000000000000000028 /* EditAccountSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000028 /* EditAccountSheet.swift */; };
@@ -48,7 +47,13 @@
 		400000000000000000000033 /* RebalanceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000033 /* RebalanceService.swift */; };
 		400000000000000000000034 /* RebalanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000034 /* RebalanceView.swift */; };
 		400000000000000000000035 /* TargetAllocationSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000035 /* TargetAllocationSheet.swift */; };
-		400000000000000000000036 /* AddTransactionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000036 /* AddTransactionSheet.swift */; };
+		400000000000000000000083 /* RebalancePrefill.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000083 /* RebalancePrefill.swift */; };
+		400000000000000000000084 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000084 /* AboutView.swift */; };
+		400000000000000000000085 /* BiometricLock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000085 /* BiometricLock.swift */; };
+		400000000000000000000086 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000086 /* PrivacyInfo.xcprivacy */; };
+		400000000000000000000087 /* SwiftDataTestHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000087 /* SwiftDataTestHelper.swift */; };
+		400000000000000000000088 /* TransactionReversalServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000088 /* TransactionReversalServiceTests.swift */; };
+		400000000000000000000089 /* DCAServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000089 /* DCAServiceTests.swift */; };
 		400000000000000000000040 /* RangeTabsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000040 /* RangeTabsView.swift */; };
 		400000000000000000000041 /* MiniSparkline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000041 /* MiniSparkline.swift */; };
 		400000000000000000000042 /* DonutChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000042 /* DonutChart.swift */; };
@@ -63,6 +68,19 @@
 		40000000000000000000004D /* NicknameEditSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30000000000000000000004D /* NicknameEditSheet.swift */; };
 		40000000000000000000004E /* WidgetTutorialSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30000000000000000000004E /* WidgetTutorialSheet.swift */; };
 		400000000000000000000050 /* TransactionReversalService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000050 /* TransactionReversalService.swift */; };
+		400000000000000000000051 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000051 /* WelcomeView.swift */; };
+		400000000000000000000052 /* EmptyStatesV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000052 /* EmptyStatesV2.swift */; };
+		400000000000000000000060 /* SourceHanSerifSC-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000060 /* SourceHanSerifSC-Regular.otf */; };
+		400000000000000000000061 /* SourceHanSerifSC-Medium.otf in Resources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000061 /* SourceHanSerifSC-Medium.otf */; };
+		400000000000000000000062 /* SourceHanSerifSC-Light.otf in Resources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000062 /* SourceHanSerifSC-Light.otf */; };
+		400000000000000000000063 /* SourceHanSerifSC-ExtraLight.otf in Resources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000063 /* SourceHanSerifSC-ExtraLight.otf */; };
+		400000000000000000000070 /* MoneyText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000070 /* MoneyText.swift */; };
+		400000000000000000000080 /* QuoteResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000080 /* QuoteResolver.swift */; };
+		400000000000000000000081 /* SnapshotService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000081 /* SnapshotService.swift */; };
+		400000000000000000000082 /* DebugLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000082 /* DebugLog.swift */; };
+		400000000000000000000090 /* MoneyMapWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000090 /* MoneyMapWidget.swift */; };
+		400000000000000000000091 /* MoneyMapWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300000000000000000000091 /* MoneyMapWidgetBundle.swift */; };
+		400000000000000000000092 /* MoneyMapWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 300000000000000000000092 /* MoneyMapWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -91,7 +109,6 @@
 		300000000000000000000022 /* DCAService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DCAService.swift; sourceTree = "<group>"; };
 		300000000000000000000023 /* Card.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Card.swift; sourceTree = "<group>"; };
 		300000000000000000000024 /* MetricRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricRow.swift; sourceTree = "<group>"; };
-		300000000000000000000025 /* AmountText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmountText.swift; sourceTree = "<group>"; };
 		300000000000000000000026 /* AccountDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountDetailView.swift; sourceTree = "<group>"; };
 		300000000000000000000027 /* AddAccountSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddAccountSheet.swift; sourceTree = "<group>"; };
 		300000000000000000000028 /* EditAccountSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditAccountSheet.swift; sourceTree = "<group>"; };
@@ -108,7 +125,14 @@
 		300000000000000000000033 /* RebalanceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RebalanceService.swift; sourceTree = "<group>"; };
 		300000000000000000000034 /* RebalanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RebalanceView.swift; sourceTree = "<group>"; };
 		300000000000000000000035 /* TargetAllocationSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TargetAllocationSheet.swift; sourceTree = "<group>"; };
-		300000000000000000000036 /* AddTransactionSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTransactionSheet.swift; sourceTree = "<group>"; };
+		300000000000000000000083 /* RebalancePrefill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RebalancePrefill.swift; sourceTree = "<group>"; };
+		300000000000000000000084 /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
+		300000000000000000000085 /* BiometricLock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiometricLock.swift; sourceTree = "<group>"; };
+		300000000000000000000086 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		300000000000000000000087 /* SwiftDataTestHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftDataTestHelper.swift; sourceTree = "<group>"; };
+		300000000000000000000088 /* TransactionReversalServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionReversalServiceTests.swift; sourceTree = "<group>"; };
+		300000000000000000000089 /* DCAServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DCAServiceTests.swift; sourceTree = "<group>"; };
+		300000000000000000000098 /* MoneyMapTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MoneyMapTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		300000000000000000000040 /* RangeTabsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RangeTabsView.swift; sourceTree = "<group>"; };
 		300000000000000000000041 /* MiniSparkline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniSparkline.swift; sourceTree = "<group>"; };
 		300000000000000000000042 /* DonutChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DonutChart.swift; sourceTree = "<group>"; };
@@ -123,11 +147,55 @@
 		30000000000000000000004D /* NicknameEditSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NicknameEditSheet.swift; sourceTree = "<group>"; };
 		30000000000000000000004E /* WidgetTutorialSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetTutorialSheet.swift; sourceTree = "<group>"; };
 		300000000000000000000050 /* TransactionReversalService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionReversalService.swift; sourceTree = "<group>"; };
+		300000000000000000000051 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
+		300000000000000000000052 /* EmptyStatesV2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStatesV2.swift; sourceTree = "<group>"; };
+		300000000000000000000060 /* SourceHanSerifSC-Regular.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SourceHanSerifSC-Regular.otf"; sourceTree = "<group>"; };
+		300000000000000000000061 /* SourceHanSerifSC-Medium.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SourceHanSerifSC-Medium.otf"; sourceTree = "<group>"; };
+		300000000000000000000062 /* SourceHanSerifSC-Light.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SourceHanSerifSC-Light.otf"; sourceTree = "<group>"; };
+		300000000000000000000063 /* SourceHanSerifSC-ExtraLight.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SourceHanSerifSC-ExtraLight.otf"; sourceTree = "<group>"; };
+		300000000000000000000070 /* MoneyText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoneyText.swift; sourceTree = "<group>"; };
+		300000000000000000000080 /* QuoteResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuoteResolver.swift; sourceTree = "<group>"; };
+		300000000000000000000081 /* SnapshotService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnapshotService.swift; sourceTree = "<group>"; };
+		300000000000000000000082 /* DebugLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLog.swift; sourceTree = "<group>"; };
 		300000000000000000000099 /* MoneyMap.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MoneyMap.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		300000000000000000000090 /* MoneyMapWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoneyMapWidget.swift; sourceTree = "<group>"; };
+		300000000000000000000091 /* MoneyMapWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoneyMapWidgetBundle.swift; sourceTree = "<group>"; };
+		300000000000000000000092 /* MoneyMapWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MoneyMapWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		300000000000000000000093 /* MoneyMap.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MoneyMap.entitlements; sourceTree = "<group>"; };
+		300000000000000000000094 /* MoneyMapWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MoneyMapWidget.entitlements; sourceTree = "<group>"; };
+		300000000000000000000095 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		500000000000000000000090 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				400000000000000000000092 /* MoneyMapWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		500000000000000000000002 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		500000000000000000000091 /* Frameworks (Widget) */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		500000000000000000000099 /* Frameworks (Tests) */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -141,14 +209,39 @@
 			isa = PBXGroup;
 			children = (
 				200000000000000000000001 /* MoneyMap */,
+				200000000000000000000090 /* MoneyMapWidget */,
+				200000000000000000000098 /* MoneyMapTests */,
 				100000000000000000000003 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		200000000000000000000098 /* MoneyMapTests */ = {
+			isa = PBXGroup;
+			children = (
+				300000000000000000000087 /* SwiftDataTestHelper.swift */,
+				300000000000000000000088 /* TransactionReversalServiceTests.swift */,
+				300000000000000000000089 /* DCAServiceTests.swift */,
+			);
+			path = MoneyMapTests;
+			sourceTree = "<group>";
+		};
+		200000000000000000000090 /* MoneyMapWidget */ = {
+			isa = PBXGroup;
+			children = (
+				300000000000000000000090 /* MoneyMapWidget.swift */,
+				300000000000000000000091 /* MoneyMapWidgetBundle.swift */,
+				300000000000000000000094 /* MoneyMapWidget.entitlements */,
+				300000000000000000000095 /* Info.plist */,
+			);
+			path = MoneyMapWidget;
 			sourceTree = "<group>";
 		};
 		100000000000000000000003 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 				300000000000000000000099 /* MoneyMap.app */,
+				300000000000000000000092 /* MoneyMapWidgetExtension.appex */,
+				300000000000000000000098 /* MoneyMapTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -161,10 +254,24 @@
 				200000000000000000000004 /* Services */,
 				200000000000000000000005 /* Utils */,
 				200000000000000000000006 /* Views */,
+				200000000000000000000010 /* Fonts */,
 				300000000000000000000013 /* Assets.xcassets */,
+				300000000000000000000086 /* PrivacyInfo.xcprivacy */,
+				300000000000000000000093 /* MoneyMap.entitlements */,
 				20000000000000000000000C /* Preview Content */,
 			);
 			path = MoneyMap;
+			sourceTree = "<group>";
+		};
+		200000000000000000000010 /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				300000000000000000000060 /* SourceHanSerifSC-Regular.otf */,
+				300000000000000000000061 /* SourceHanSerifSC-Medium.otf */,
+				300000000000000000000062 /* SourceHanSerifSC-Light.otf */,
+				300000000000000000000063 /* SourceHanSerifSC-ExtraLight.otf */,
+			);
+			path = Fonts;
 			sourceTree = "<group>";
 		};
 		200000000000000000000002 /* App */ = {
@@ -205,6 +312,9 @@
 				300000000000000000000031 /* WidgetState.swift */,
 				300000000000000000000033 /* RebalanceService.swift */,
 				300000000000000000000050 /* TransactionReversalService.swift */,
+				300000000000000000000080 /* QuoteResolver.swift */,
+				300000000000000000000081 /* SnapshotService.swift */,
+				300000000000000000000085 /* BiometricLock.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -215,6 +325,7 @@
 				30000000000000000000000C /* Formatters.swift */,
 				300000000000000000000020 /* Theme.swift */,
 				30000000000000000000004A /* ToastManager.swift */,
+				300000000000000000000082 /* DebugLog.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -223,6 +334,8 @@
 			isa = PBXGroup;
 			children = (
 				30000000000000000000000D /* ContentView.swift */,
+				300000000000000000000051 /* WelcomeView.swift */,
+				20000000000000000000000F /* EmptyStates */,
 				20000000000000000000000D /* Components */,
 				200000000000000000000007 /* Dashboard */,
 				200000000000000000000008 /* Accounts */,
@@ -245,6 +358,14 @@
 			path = Dashboard;
 			sourceTree = "<group>";
 		};
+		20000000000000000000000F /* EmptyStates */ = {
+			isa = PBXGroup;
+			children = (
+				300000000000000000000052 /* EmptyStatesV2.swift */,
+			);
+			path = EmptyStates;
+			sourceTree = "<group>";
+		};
 		200000000000000000000008 /* Accounts */ = {
 			isa = PBXGroup;
 			children = (
@@ -262,7 +383,6 @@
 			isa = PBXGroup;
 			children = (
 				300000000000000000000010 /* TransactionsView.swift */,
-				300000000000000000000036 /* AddTransactionSheet.swift */,
 				300000000000000000000047 /* TransactionTypePickerView.swift */,
 				200000000000000000000020 /* Forms */,
 			);
@@ -285,6 +405,7 @@
 				300000000000000000000012 /* SettingsView.swift */,
 				30000000000000000000004D /* NicknameEditSheet.swift */,
 				30000000000000000000004E /* WidgetTutorialSheet.swift */,
+				300000000000000000000084 /* AboutView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -302,11 +423,11 @@
 			children = (
 				300000000000000000000023 /* Card.swift */,
 				300000000000000000000024 /* MetricRow.swift */,
-				300000000000000000000025 /* AmountText.swift */,
 				300000000000000000000040 /* RangeTabsView.swift */,
 				300000000000000000000041 /* MiniSparkline.swift */,
 				300000000000000000000042 /* DonutChart.swift */,
 				30000000000000000000004B /* ToastView.swift */,
+				300000000000000000000070 /* MoneyText.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -316,6 +437,7 @@
 			children = (
 				300000000000000000000034 /* RebalanceView.swift */,
 				300000000000000000000035 /* TargetAllocationSheet.swift */,
+				300000000000000000000083 /* RebalancePrefill.swift */,
 			);
 			path = Rebalance;
 			sourceTree = "<group>";
@@ -339,15 +461,50 @@
 				500000000000000000000001 /* Sources */,
 				500000000000000000000002 /* Frameworks */,
 				500000000000000000000003 /* Resources */,
+				500000000000000000000090 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				600000000000000000000003 /* PBXTargetDependency */,
 			);
 			name = MoneyMap;
 			productName = MoneyMap;
 			productReference = 300000000000000000000099 /* MoneyMap.app */;
 			productType = "com.apple.product-type.application";
+		};
+		600000000000000000000002 /* MoneyMapWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 800000000000000000000091 /* Build configuration list for PBXNativeTarget "MoneyMapWidgetExtension" */;
+			buildPhases = (
+				500000000000000000000092 /* Sources (Widget) */,
+				500000000000000000000091 /* Frameworks (Widget) */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MoneyMapWidgetExtension;
+			productName = MoneyMapWidgetExtension;
+			productReference = 300000000000000000000092 /* MoneyMapWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		600000000000000000000097 /* MoneyMapTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 800000000000000000000098 /* Build configuration list for PBXNativeTarget "MoneyMapTests" */;
+			buildPhases = (
+				500000000000000000000098 /* Sources (Tests) */,
+				500000000000000000000099 /* Frameworks (Tests) */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				600000000000000000000098 /* PBXTargetDependency */,
+			);
+			name = MoneyMapTests;
+			productName = MoneyMapTests;
+			productReference = 300000000000000000000098 /* MoneyMapTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -360,6 +517,12 @@
 				LastUpgradeCheck = 1640;
 				TargetAttributes = {
 					600000000000000000000001 = {
+						CreatedOnToolsVersion = 16.4;
+					};
+					600000000000000000000002 = {
+						CreatedOnToolsVersion = 16.4;
+					};
+					600000000000000000000097 = {
 						CreatedOnToolsVersion = 16.4;
 					};
 				};
@@ -380,6 +543,8 @@
 			projectRoot = "";
 			targets = (
 				600000000000000000000001 /* MoneyMap */,
+				600000000000000000000002 /* MoneyMapWidgetExtension */,
+				600000000000000000000097 /* MoneyMapTests */,
 			);
 		};
 /* End PBXProject section */
@@ -390,10 +555,45 @@
 			buildActionMask = 2147483647;
 			files = (
 				400000000000000000000013 /* Assets.xcassets in Resources */,
+				400000000000000000000060 /* SourceHanSerifSC-Regular.otf in Resources */,
+				400000000000000000000061 /* SourceHanSerifSC-Medium.otf in Resources */,
+				400000000000000000000062 /* SourceHanSerifSC-Light.otf in Resources */,
+				400000000000000000000063 /* SourceHanSerifSC-ExtraLight.otf in Resources */,
+				400000000000000000000086 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXContainerItemProxy section */
+		600000000000000000000004 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 100000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 600000000000000000000002;
+			remoteInfo = MoneyMapWidgetExtension;
+		};
+		600000000000000000000099 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 100000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 600000000000000000000001;
+			remoteInfo = MoneyMap;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		600000000000000000000003 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 600000000000000000000002 /* MoneyMapWidgetExtension */;
+			targetProxy = 600000000000000000000004 /* PBXContainerItemProxy */;
+		};
+		600000000000000000000098 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 600000000000000000000001 /* MoneyMap */;
+			targetProxy = 600000000000000000000099 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXSourcesBuildPhase section */
 		500000000000000000000001 /* Sources */ = {
@@ -423,7 +623,6 @@
 				400000000000000000000022 /* DCAService.swift in Sources */,
 				400000000000000000000023 /* Card.swift in Sources */,
 				400000000000000000000024 /* MetricRow.swift in Sources */,
-				400000000000000000000025 /* AmountText.swift in Sources */,
 				400000000000000000000026 /* AccountDetailView.swift in Sources */,
 				400000000000000000000027 /* AddAccountSheet.swift in Sources */,
 				400000000000000000000028 /* EditAccountSheet.swift in Sources */,
@@ -441,7 +640,9 @@
 				400000000000000000000050 /* TransactionReversalService.swift in Sources */,
 				400000000000000000000034 /* RebalanceView.swift in Sources */,
 				400000000000000000000035 /* TargetAllocationSheet.swift in Sources */,
-				400000000000000000000036 /* AddTransactionSheet.swift in Sources */,
+				400000000000000000000083 /* RebalancePrefill.swift in Sources */,
+				400000000000000000000084 /* AboutView.swift in Sources */,
+				400000000000000000000085 /* BiometricLock.swift in Sources */,
 				400000000000000000000040 /* RangeTabsView.swift in Sources */,
 				400000000000000000000041 /* MiniSparkline.swift in Sources */,
 				400000000000000000000042 /* DonutChart.swift in Sources */,
@@ -455,6 +656,31 @@
 				40000000000000000000004B /* ToastView.swift in Sources */,
 				40000000000000000000004D /* NicknameEditSheet.swift in Sources */,
 				40000000000000000000004E /* WidgetTutorialSheet.swift in Sources */,
+				400000000000000000000051 /* WelcomeView.swift in Sources */,
+				400000000000000000000052 /* EmptyStatesV2.swift in Sources */,
+				400000000000000000000070 /* MoneyText.swift in Sources */,
+				400000000000000000000080 /* QuoteResolver.swift in Sources */,
+				400000000000000000000081 /* SnapshotService.swift in Sources */,
+				400000000000000000000082 /* DebugLog.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		500000000000000000000098 /* Sources (Tests) */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				400000000000000000000087 /* SwiftDataTestHelper.swift in Sources */,
+				400000000000000000000088 /* TransactionReversalServiceTests.swift in Sources */,
+				400000000000000000000089 /* DCAServiceTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		500000000000000000000092 /* Sources (Widget) */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				400000000000000000000090 /* MoneyMapWidget.swift in Sources */,
+				400000000000000000000091 /* MoneyMapWidgetBundle.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -583,6 +809,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = MoneyMap/MoneyMap.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"MoneyMap/Preview Content\"";
@@ -592,7 +819,16 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "钱袋";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UIAppFonts = (
+					"SourceHanSerifSC-Regular.otf",
+					"SourceHanSerifSC-Medium.otf",
+					"SourceHanSerifSC-Light.otf",
+					"SourceHanSerifSC-ExtraLight.otf",
+				);
+				INFOPLIST_KEY_UILaunchScreen_BackgroundColor = LaunchBackground;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "钱袋使用 Face ID 在 App 启动或从后台回来时验证你的身份,防止他人打开你的资产数据。";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -614,6 +850,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = MoneyMap/MoneyMap.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"MoneyMap/Preview Content\"";
@@ -623,7 +860,16 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "钱袋";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UIAppFonts = (
+					"SourceHanSerifSC-Regular.otf",
+					"SourceHanSerifSC-Medium.otf",
+					"SourceHanSerifSC-Light.otf",
+					"SourceHanSerifSC-ExtraLight.otf",
+				);
+				INFOPLIST_KEY_UILaunchScreen_BackgroundColor = LaunchBackground;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "钱袋使用 Face ID 在 App 启动或从后台回来时验证你的身份,防止他人打开你的资产数据。";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -637,6 +883,98 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		700000000000000000000091 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = MoneyMapWidget/MoneyMapWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PXGH48DJS9;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = MoneyMapWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "钱袋 Widget";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.lusansui.MoneyMap.Widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		700000000000000000000092 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = MoneyMapWidget/MoneyMapWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PXGH48DJS9;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = MoneyMapWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "钱袋 Widget";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.lusansui.MoneyMap.Widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		700000000000000000000098 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PXGH48DJS9;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.lusansui.MoneyMapTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MoneyMap.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MoneyMap";
+			};
+			name = Debug;
+		};
+		700000000000000000000099 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PXGH48DJS9;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.lusansui.MoneyMapTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MoneyMap.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MoneyMap";
 			};
 			name = Release;
 		};
@@ -657,6 +995,24 @@
 			buildConfigurations = (
 				700000000000000000000003 /* Debug */,
 				700000000000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		800000000000000000000091 /* Build configuration list for PBXNativeTarget "MoneyMapWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				700000000000000000000091 /* Debug */,
+				700000000000000000000092 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		800000000000000000000098 /* Build configuration list for PBXNativeTarget "MoneyMapTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				700000000000000000000098 /* Debug */,
+				700000000000000000000099 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

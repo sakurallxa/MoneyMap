@@ -52,7 +52,7 @@ struct AccountDetailView: View {
         List {
             Section { summaryHero }
                 .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 0, leading: 14, bottom: 6, trailing: 14))
+                .listRowInsets(EdgeInsets(top: 18, leading: 14, bottom: 10, trailing: 14))
                 .listRowSeparator(.hidden)
 
             if isInvestmentAccount && !positions.isEmpty {
@@ -84,8 +84,8 @@ struct AccountDetailView: View {
                     }
                 } header: {
                     Text("持仓 · \(positions.count) 项")
-                        .font(.system(size: 11, weight: .bold))
-                        .kerning(1.2)
+                        .font(Theme.TypeToken.eyebrow())
+                        .kerning(Theme.TypeToken.eyebrowKerning)
                         .foregroundStyle(.tertiary)
                         .textCase(nil)
                         .padding(.horizontal, 6)
@@ -99,7 +99,21 @@ struct AccountDetailView: View {
         .background(Theme.Palette.pageBgWarm.ignoresSafeArea())
         .navigationTitle(account.name)
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    dismiss()
+                } label: {
+                    HStack(spacing: 3) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 16, weight: .semibold))
+                        Text("返回")
+                            .font(Theme.serif(15))
+                    }
+                    .foregroundStyle(Theme.Palette.accentDark)
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
                     Button { showEditSheet = true } label: {
@@ -119,7 +133,7 @@ struct AccountDetailView: View {
                 } label: {
                     Image(systemName: "slider.horizontal.3")
                         .font(.body)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Theme.Palette.accentDark)
                 }
             }
         }
@@ -260,7 +274,7 @@ struct AccountDetailView: View {
                         .tracking(2.4)
                         .foregroundStyle(Color(red: 0.82, green: 0.62, blue: 0.46))
                     Text(account.type.displayName)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(Theme.serif(13, weight: .semibold))
                         .foregroundStyle(Color.white.opacity(0.92))
                 }
                 Spacer()
@@ -278,24 +292,20 @@ struct AccountDetailView: View {
                 .foregroundStyle(Color.white.opacity(0.42))
 
             // 大数字
-            HStack(alignment: .firstTextBaseline, spacing: 2) {
-                Text("¥")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(Color.white.opacity(0.72))
-                Text(hideBalance ? "· · · · ·" : formatNumber(totalValueCNY))
-                    .font(.system(size: 34, weight: .bold))
-                    .kerning(-0.8)
-                    .monospacedDigit()
-                    .foregroundStyle(.white)
-                    .accessibilityLabel(totalValueCNY.accessibilityAmountLabel(prefix: "账户总值", hidden: hideBalance))
-            }
+            MoneyText(
+                value: totalValueCNY,
+                scale: .display,
+                hidden: hideBalance,
+                color: .white
+            )
+            .accessibilityLabel(totalValueCNY.accessibilityAmountLabel(prefix: "账户总值", hidden: hideBalance))
             .padding(.top, 2)
 
             Spacer(minLength: 0)
 
             // 底部账户名
             Text(account.name)
-                .font(.system(size: 13, weight: .medium))
+                .font(Theme.serif(13, weight: .medium))
                 .foregroundStyle(Color.white.opacity(0.58))
                 .lineLimit(1)
         }
@@ -362,45 +372,51 @@ struct AccountDetailView: View {
     private var returnsCard: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("收益概览")
-                .font(.system(size: 17, weight: .bold))
+                .font(Theme.serif(17, weight: .bold))
 
             VStack(spacing: 12) {
                 MetricRow(label: "今日",
                           value: hideBalance ? kHiddenAmountMask : CurrencyFormatter.signedCNY(returns.dailyPnL),
                           valueColor: Color.pnlColor(returns.dailyPnL),
-                          valueSubtitle: hideBalance ? "··%" : CurrencyFormatter.percent(returns.dailyPnLPercent))
+                          valueSubtitle: hideBalance ? Theme.HiddenMask.percent : CurrencyFormatter.percent(returns.dailyPnLPercent))
                 Divider().opacity(0.4)
                 MetricRow(label: "近 7 天",
                           value: hideBalance ? kHiddenAmountMask : CurrencyFormatter.signedCNY(returns.weeklyPnL),
                           valueColor: Color.pnlColor(returns.weeklyPnL),
-                          valueSubtitle: hideBalance ? "··%" : CurrencyFormatter.percent(returns.weeklyPnLPercent))
+                          valueSubtitle: hideBalance ? Theme.HiddenMask.percent : CurrencyFormatter.percent(returns.weeklyPnLPercent))
                 Divider().opacity(0.4)
                 MetricRow(label: "近 30 天",
                           value: hideBalance ? kHiddenAmountMask : CurrencyFormatter.signedCNY(returns.monthlyPnL),
                           valueColor: Color.pnlColor(returns.monthlyPnL),
-                          valueSubtitle: hideBalance ? "··%" : CurrencyFormatter.percent(returns.monthlyPnLPercent))
+                          valueSubtitle: hideBalance ? Theme.HiddenMask.percent : CurrencyFormatter.percent(returns.monthlyPnLPercent))
                 Divider().opacity(0.4)
                 MetricRow(label: "今年至今",
                           value: hideBalance ? kHiddenAmountMask : CurrencyFormatter.signedCNY(returns.ytdPnL),
                           valueColor: Color.pnlColor(returns.ytdPnL),
-                          valueSubtitle: hideBalance ? "··%" : CurrencyFormatter.percent(returns.ytdPnLPercent))
+                          valueSubtitle: hideBalance ? Theme.HiddenMask.percent : CurrencyFormatter.percent(returns.ytdPnLPercent))
             }
 
             // 底部累计盈亏 highlight 行
             HStack {
                 Text("累计盈亏")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(Theme.serif(13, weight: .semibold))
                     .foregroundStyle(.secondary)
                 Spacer()
                 VStack(alignment: .trailing, spacing: 2) {
-                    Text(hideBalance ? kHiddenAmountMask : CurrencyFormatter.signedCNY(returns.unrealizedPnL))
-                        .font(.system(size: 17, weight: .heavy))
-                        .monospacedDigit()
-                        .foregroundStyle(Color.pnlColor(returns.unrealizedPnL))
-                    Text(hideBalance ? "··%" : CurrencyFormatter.percent(returns.unrealizedPnLPercent))
-                        .font(.system(size: 11, weight: .semibold))
-                        .monospacedDigit()
-                        .foregroundStyle(.tertiary)
+                    MoneyText(
+                        value: returns.unrealizedPnL,
+                        scale: .body,
+                        signed: true,
+                        hidden: hideBalance,
+                        color: Color.pnlColor(returns.unrealizedPnL)
+                    )
+                    PercentText(
+                        value: returns.unrealizedPnLPercent,
+                        size: 11,
+                        signed: true,
+                        hidden: hideBalance,
+                        style: AnyShapeStyle(HierarchicalShapeStyle.tertiary)
+                    )
                 }
             }
             .padding(.horizontal, 14)
@@ -440,12 +456,12 @@ struct PositionRow: View {
 
     private var iconColor: Color {
         switch position.assetClass {
-        case .gold: return Color(hex: "#D4AF37")
-        case .fund: return Color(hex: "#F4B860")
-        case .stockA: return Color(hex: "#E63946")
-        case .stockHK: return Color(hex: "#2A9D8F")
-        case .stockUS: return Color(hex: "#1ABC9C")
-        case .cash, .moneyFund: return Color(hex: "#5B8FF9")
+        case .gold: return Theme.Palette.segmentGold
+        case .fund: return Theme.Palette.segmentFund
+        case .stockA: return Theme.Palette.segmentStockA
+        case .stockHK: return Theme.Palette.segmentStockHK
+        case .stockUS: return Theme.Palette.segmentStockUS
+        case .cash, .moneyFund: return Theme.Palette.segmentCash
         }
     }
 
@@ -477,7 +493,7 @@ struct PositionRow: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(position.assetName)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(Theme.serif(15, weight: .semibold))
                         .foregroundStyle(.primary)
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
@@ -518,7 +534,7 @@ struct PositionRow: View {
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.orange)
             Text("上次更新 \(daysSinceUpdate) 天前 · 建议手动更新价格")
-                .font(.system(size: 11))
+                .font(Theme.serif(11))
                 .foregroundStyle(.orange)
             Spacer()
         }
@@ -534,15 +550,15 @@ struct PositionRow: View {
         let isUp = pnl >= 0
         return HStack {
             Text("累计盈亏")
-                .font(.system(size: 12))
+                .font(Theme.serif(12))
                 .foregroundStyle(.secondary)
             Spacer()
             HStack(spacing: 0) {
-                Text(hideBalance ? "¥····" : "\(isUp ? "+" : "-")\(currency.symbol)\(formatValue(abs(pnl)))")
+                Text(hideBalance ? kHiddenAmountMask : "\(isUp ? "+" : "-")\(currency.symbol)\(formatValue(abs(pnl)))")
                     .font(.system(size: 14, weight: .semibold))
                     .monospacedDigit()
                     .foregroundStyle(color)
-                Text(hideBalance ? "··%" : String(format: "%+.2f%%", pct))
+                Text(hideBalance ? Theme.HiddenMask.percent : String(format: "%+.2f%%", pct))
                     .font(.system(size: 13, weight: .medium))
                     .monospacedDigit()
                     .foregroundStyle(color.opacity(0.85))
@@ -562,7 +578,7 @@ struct PositionRow: View {
     ) -> some View {
         HStack {
             Text(label)
-                .font(.system(size: 12))
+                .font(Theme.serif(12))
                 .foregroundStyle(.secondary)
             Spacer()
             HStack(spacing: 4) {

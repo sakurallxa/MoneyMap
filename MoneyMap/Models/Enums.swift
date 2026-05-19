@@ -146,18 +146,21 @@ enum TransactionType: String, Codable, CaseIterable {
 
 enum TransactionStatus: String, Codable, CaseIterable {
     case pending = "PENDING"
-    case confirmed = "CONFIRMED"
+    case confirmed = "CONFIRMED"  // P1-015: 历史值,显示层等同 .completed
     case completed = "COMPLETED"
     case cancelled = "CANCELLED"
 
     var displayName: String {
         switch self {
         case .pending: return "在途"
-        case .confirmed: return "已确认"
+        case .confirmed: return "已完成"   // 与 .completed 一致
         case .completed: return "已完成"
         case .cancelled: return "已取消"
         }
     }
+
+    /// 显示层"已完成"语义 — confirmed/completed 合并
+    var isSettled: Bool { self == .completed || self == .confirmed }
 }
 
 /// 走势图区间——选定后取该区间内的所有每日快照绘制成折线。
@@ -291,7 +294,7 @@ enum AssetClass: String, Codable, CaseIterable {
         case .cash: return "#5B8FF9"
         case .moneyFund: return "#7B68EE"
         case .fund: return "#F4B860"
-        case .stockA: return "#E63946"
+        case .stockA: return "#9B2C2C"     // 与 Theme.Palette.segmentStockA 同值,P0-003 解耦 PnL 红
         case .stockHK: return "#2A9D8F"
         case .stockUS: return "#1ABC9C"
         case .gold: return "#D4AF37"
@@ -313,8 +316,44 @@ enum GoldRecognizer {
         "518890", // 永赢黄金ETF
     ]
 
+    /// 现货金 / 积存金 / 实物金常见代码 → 推断出的标准名称
+    /// 用于黄金账户输入代码后自动同步资产名(即便价格 API 拉取失败也要填上名字)
+    static let spotGoldNames: [String: String] = [
+        "AU9999":       "黄金 Au99.99",
+        "AU99.99":      "黄金 Au99.99",
+        "AU99_99":      "黄金 Au99.99",
+        "99.99":        "黄金 Au99.99",
+        "AU995":        "黄金 Au99.5",
+        "AU99.5":       "黄金 Au99.5",
+        "AU995G":       "黄金 Au99.5",
+        "99.5":         "黄金 Au99.5",
+        "AU100G":       "黄金 100g 实物金条",
+        "AU50G":        "黄金 50g 实物金条",
+        "AU20G":        "黄金 20g 实物金条",
+        "AU10G":        "黄金 10g 实物金条",
+        "AUTD":         "黄金延期 Au(T+D)",
+        "AU_TD":        "黄金延期 Au(T+D)",
+        "MAU_TD":       "迷你黄金 mAu(T+D)",
+        "PT9995":       "铂金 Pt99.95",
+        "AG_TD":        "白银延期 Ag(T+D)",
+        "AG99.99":      "白银 Ag99.99",
+    ]
+
     static func isGoldAssetCode(_ code: String) -> Bool {
         goldETFCodes.contains(code.uppercased())
+    }
+
+    /// 根据用户输入的代码推断黄金资产的展示名。
+    /// - 命中 spotGoldNames 表 → 返回标准名
+    /// - 以 AU/PT/AG 开头但表里没有 → "黄金 \(原代码)"
+    /// - 其它 → nil(调用方决定是否兜底)
+    static func inferGoldName(from code: String) -> String? {
+        let key = code.uppercased().trimmingCharacters(in: .whitespaces)
+        if let mapped = spotGoldNames[key] { return mapped }
+        if key.hasPrefix("AU") || key.hasPrefix("PT") || key.hasPrefix("AG") {
+            return "黄金 \(key)"
+        }
+        return nil
     }
 }
 

@@ -15,7 +15,7 @@ struct RangeTabsView: View {
                     }
                 } label: {
                     Text(r.displayName)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(Theme.serif(13, weight: .semibold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 6)
                         .background(

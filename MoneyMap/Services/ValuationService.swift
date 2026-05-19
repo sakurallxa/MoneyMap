@@ -20,7 +20,7 @@ struct AssetBreakdown {
             ("现金", cash, "#5B8FF9"),
             ("货基", moneyFund, "#7B68EE"),
             ("基金", fund, "#F4B860"),
-            ("A 股", stockA, "#E63946"),
+            ("A 股", stockA, "#9B2C2C"),    // 与 Theme.Palette.segmentStockA 同值,P0-003 解耦 PnL 红
             ("港股", stockHK, "#2A9D8F"),
             ("美股", stockUS, "#1ABC9C"),
             ("黄金", gold, "#D4AF37"),

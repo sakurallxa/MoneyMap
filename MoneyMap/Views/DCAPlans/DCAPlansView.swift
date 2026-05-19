@@ -28,55 +28,33 @@ struct DCAPlansView: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                if plans.isEmpty {
-                    VStack(spacing: 0) {
-                        headerRow
-                            .padding(.horizontal, 14)
-                            .padding(.top, 8)
-                        emptyView
+            if plans.isEmpty {
+                DCAEmptyV2(addAction: { showAddSheet = true })
+                    .navigationBarHidden(true)
+                    .sheet(isPresented: $showAddSheet) {
+                        AddDCAPlanSheet()
                     }
-                } else {
-                    listView
-                }
-            }
-            .background(Theme.Palette.pageBgWarm.ignoresSafeArea())
-            .navigationBarHidden(true)
-            .sheet(isPresented: $showAddSheet) {
-                AddDCAPlanSheet()
-            }
-            .sheet(item: $editingPlan) { plan in
-                EditDCAPlanSheet(plan: plan)
+            } else {
+                listView
+                    .background(Theme.Palette.pageBgWarm.ignoresSafeArea())
+                    .navigationBarHidden(true)
+                    .sheet(isPresented: $showAddSheet) {
+                        AddDCAPlanSheet()
+                    }
+                    .sheet(item: $editingPlan) { plan in
+                        EditDCAPlanSheet(plan: plan)
+                    }
             }
         }
     }
 
-    /// 顶部:定投标题 + 月度小字 + 右侧「+」按钮(与 Dashboard/账户/交易 一致)
+    /// 顶部:定投标题 + 副标 + 右侧「眼睛 + 」按钮(P0-005, P0-006)
     private var headerRow: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 10) {
-            Text("定投")
-                .font(.system(size: 32, weight: .bold))
-                .foregroundStyle(.primary)
-            Text(navSubtitle)
-                .font(.system(size: 14))
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.85)
-            Spacer()
-            Button {
-                showAddSheet = true
-            } label: {
-                ZStack {
-                    Circle()
-                        .fill(Theme.Palette.accent)
-                        .frame(width: 36, height: 36)
-                    Image(systemName: "plus")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(.white)
-                }
-                .shadow(color: Theme.Palette.accent.opacity(0.3), radius: 8, x: 0, y: 4)
+        PageHeader(title: "定投", subtitle: navSubtitle) {
+            HStack(spacing: 6) {
+                HideBalanceToggle()
+                BronzeAddButton { showAddSheet = true }
             }
-            .alignmentGuide(.firstTextBaseline) { d in d[.bottom] - 6 }
         }
     }
 
@@ -133,17 +111,12 @@ struct DCAPlansView: View {
         .contentMargins(.horizontal, 14, for: .scrollContent)
     }
 
-    // 顶部琥珀色 banner
+    // 顶部琥珀色 banner(P2-020:用空态的自绘 calendar icon 24px 取代 SF Symbol)
     private var amberBanner: some View {
         HStack(spacing: 10) {
-            Image(systemName: "calendar")
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(.white)
-                .frame(width: 30, height: 30)
-                .background(Theme.Palette.accent)
-                .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+            IconDCACal(size: 30)
             Text("到期当日自动生成定投记录,T+N 确认份额,更新总资产和收益数据")
-                .font(.system(size: 12))
+                .font(Theme.serif(12))
                 .foregroundStyle(Theme.Palette.accentDark)
                 .lineSpacing(2)
                 .fixedSize(horizontal: false, vertical: true)
@@ -159,35 +132,6 @@ struct DCAPlansView: View {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .strokeBorder(Theme.Palette.accent.opacity(0.18), lineWidth: 0.5)
         )
-    }
-
-    private var emptyView: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "calendar.badge.clock")
-                .font(.system(size: 48))
-                .foregroundStyle(.tertiary)
-            Text("还没有定投计划")
-                .font(.headline)
-            Text("点击右上角 + 创建,到期当日会自动生成定投记录")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
-            Button {
-                showAddSheet = true
-            } label: {
-                Text("立即创建")
-                    .font(.subheadline.weight(.semibold))
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 12)
-                    .background(Theme.Palette.accent)
-                    .foregroundStyle(.white)
-                    .clipShape(Capsule())
-            }
-            .padding(.top, 8)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.top, 80)
     }
 
     private func togglePause(_ plan: DCAPlan) {
@@ -240,7 +184,7 @@ struct DCAPlanCard: View {
             HStack(alignment: .top, spacing: 8) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(plan.name)
-                        .font(.system(size: 15, weight: .bold))
+                        .font(Theme.serif(15, weight: .bold))
                         .foregroundStyle(.primary)
                         .lineLimit(2)
                     HStack(spacing: 0) {
@@ -250,7 +194,7 @@ struct DCAPlanCard: View {
                         Text(plan.targetAssetCode)
                             .monospacedDigit()
                     }
-                    .font(.system(size: 11))
+                    .font(Theme.serif(11))
                     .foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 0)
@@ -270,7 +214,7 @@ struct DCAPlanCard: View {
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(Color(hex: "#5B8FF9"))
                 Text(plan.sourceAccountName)
-                    .font(.system(size: 11))
+                    .font(Theme.serif(11))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                 Image(systemName: "arrow.right")
@@ -280,7 +224,7 @@ struct DCAPlanCard: View {
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(Theme.Palette.accent)
                 Text(plan.targetAccountName)
-                    .font(.system(size: 11))
+                    .font(Theme.serif(11))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                 Spacer(minLength: 0)
@@ -291,17 +235,12 @@ struct DCAPlanCard: View {
     }
 
     /// 状态胶囊 — 浅色底 + 深色文字,克制不抢眼。
+    /// P1-016 + P2-022:走统一 StatusPill 组件,active=铜色 / paused=灰
     private var statusPill: some View {
-        let isActive = plan.isActive
-        let bg: Color = isActive ? Color.pnlNegative.opacity(0.14) : Color.black.opacity(0.06)
-        let fg: Color = isActive ? Color.pnlNegative : .secondary
-        return Text(isActive ? "进行中" : "已暂停")
-            .font(.system(size: 11, weight: .semibold))
-            .foregroundStyle(fg)
-            .padding(.horizontal, 9)
-            .padding(.vertical, 3)
-            .background(bg)
-            .clipShape(Capsule())
+        StatusPill(
+            text: plan.isActive ? "进行中" : "已暂停",
+            tone: plan.isActive ? .active : .paused
+        )
     }
 
     private var frequencyLabel: String {
@@ -316,10 +255,10 @@ struct DCAPlanCard: View {
     private func metricCell(label: String, value: String, danger: Bool) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(label)
-                .font(.system(size: 10, weight: .semibold))
+                .font(Theme.serif(10, weight: .semibold))
                 .foregroundStyle(danger ? Color.pnlNegative : .secondary)
             Text(value)
-                .font(.system(size: 13, weight: .bold))
+                .font(Theme.serif(13, weight: .bold))
                 .foregroundStyle(danger ? Color.pnlNegative : .primary)
                 .monospacedDigit()
                 .lineLimit(1)

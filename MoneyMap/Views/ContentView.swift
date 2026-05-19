@@ -1,5 +1,10 @@
 import SwiftUI
 
+extension Notification.Name {
+    /// 跨 tab 跳转 — object 传递目标 tab index(Int)
+    static let switchToTab = Notification.Name("MoneyMap.switchToTab")
+}
+
 struct ContentView: View {
     @State private var selectedTab: Int = {
         if let arg = ProcessInfo.processInfo.environment["MONEYMAP_INITIAL_TAB"], let n = Int(arg) { return n }
@@ -17,7 +22,7 @@ struct ContentView: View {
             DashboardView()
                 .tag(0)
                 .tabItem {
-                    Label("钱袋", systemImage: "chart.pie.fill")
+                    Label("钱袋", systemImage: "bag.fill")
                 }
 
             AccountsView()
@@ -44,17 +49,30 @@ struct ContentView: View {
                     Label("设置", systemImage: "gearshape")
                 }
         }
-        .tint(.accentColor)
+        .tint(Theme.Palette.accentDark)    // 全局铜深色覆盖 SwiftUI 默认蓝 tint(系统 Back / Menu 等)
         .sheet(isPresented: $showRebalance) {
             NavigationStack { RebalanceView() }
         }
         .sheet(item: $debugPrefill) { p in
-            AddTransactionSheet(prefill: p)
+            NavigationStack {
+                TransactionFormView(
+                    type: p.action.formType,
+                    onSave: { debugPrefill = nil },
+                    rebalancePrefill: p
+                )
+            }
         }
         .sheet(isPresented: $showTargetSheet) {
             TargetAllocationSheet()
         }
         .overlay(ToastOverlayView())
+        .onReceive(NotificationCenter.default.publisher(for: .switchToTab)) { note in
+            if let idx = note.object as? Int {
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    selectedTab = idx
+                }
+            }
+        }
     }
 }
 

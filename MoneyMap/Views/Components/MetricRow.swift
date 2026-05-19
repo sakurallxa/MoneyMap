@@ -9,17 +9,18 @@ struct MetricRow: View {
     var body: some View {
         HStack(alignment: .center) {
             Text(label)
-                .font(.subheadline)
+                .font(Theme.serif(15))
                 .foregroundStyle(.secondary)
             Spacer()
             VStack(alignment: .trailing, spacing: 2) {
                 Text(value)
-                    .font(.subheadline.weight(.semibold))
+                    .font(.system(size: 15, weight: .semibold))
                     .monospacedDigit()
                     .foregroundStyle(valueColor)
                 if let valueSubtitle {
                     Text(valueSubtitle)
-                        .font(.caption2)
+                        .font(.system(size: 11))
+                        .monospacedDigit()
                         .foregroundStyle(.secondary)
                 }
             }

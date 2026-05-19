@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- 钱袋不追踪用户跨 App 的行为 -->
+    <key>NSPrivacyTracking</key>
+    <false/>
+
+    <!-- 钱袋不接入任何追踪域名 -->
+    <key>NSPrivacyTrackingDomains</key>
+    <array/>
+
+    <!-- 钱袋不收集任何数据类型(资产数据存于用户本地 / 用户自己的 iCloud) -->
+    <key>NSPrivacyCollectedDataTypes</key>
+    <array/>
+
+    <!-- Required Reason API 使用声明 -->
+    <!-- 钱袋使用了 UserDefaults(用于偏好设置 + Widget App Group 共享) -->
+    <key>NSPrivacyAccessedAPITypes</key>
+    <array>
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <!-- CA92.1: 在本 App 自身的容器或 App Group 容器中读写 UserDefaults -->
+                <string>CA92.1</string>
+            </array>
+        </dict>
+
+        <!-- 文件时间戳 — 用于交易日期 / 备份导出文件名 -->
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <!-- C617.1: App 在自己 sandbox 内文件的时间戳 -->
+                <string>C617.1</string>
+            </array>
+        </dict>
+    </array>
+</dict>
+</plist>

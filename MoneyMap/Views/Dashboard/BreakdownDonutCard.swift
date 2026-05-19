@@ -4,6 +4,7 @@ import SwiftUI
 struct BreakdownDonutCard: View {
     let breakdown: AssetBreakdown
     let deviationPercent: Double
+    var hasTargets: Bool = true
     var hideBalance: Bool = false
 
     private var segments: [DonutChart.DonutSegment] {
@@ -18,18 +19,24 @@ struct BreakdownDonutCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
+            // 金箔 hairline — 与 Hero / Trend 卡形成视觉系列(P0-Composition)
+            Rectangle()
+                .fill(Theme.Bronze.goldHairline)
+                .frame(height: 0.6)
+                .padding(.bottom, 2)
+
             // 标题行
             HStack {
                 Text("资产分布")
-                    .font(.system(size: 17, weight: .bold))
-                    .kerning(-0.2)
+                    .font(Theme.serif(17, weight: .semibold))
+                    .kerning(0.5)
                 Spacer()
                 NavigationLink {
                     RebalanceView()
                 } label: {
                     HStack(spacing: 3) {
                         Text("再平衡")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(Theme.serif(14, weight: .semibold))
                         Image(systemName: "chevron.right")
                             .font(.system(size: 11, weight: .semibold))
                     }
@@ -38,18 +45,26 @@ struct BreakdownDonutCard: View {
                 .buttonStyle(.plain)
             }
 
-            // 偏离目标行
-            HStack(spacing: 4) {
-                Text("偏离目标")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
-                Text(String(format: "%.1f%%", deviationPercent))
-                    .font(.system(size: 12, weight: .semibold))
-                    .monospacedDigit()
-                    .foregroundStyle(deviationPercent < 5 ? .secondary : Color.pnlPositive)
-                Text("· \(deviationLabel)")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.tertiary)
+            // 偏离目标行(仅在已设置目标配置时显示)
+            if hasTargets {
+                HStack(spacing: 4) {
+                    Text("偏离目标")
+                        .font(Theme.serif(12))
+                        .foregroundStyle(.secondary)
+                    Text(String(format: "%.1f%%", deviationPercent))
+                        .font(.system(size: 12, weight: .semibold))
+                        .monospacedDigit()
+                        .foregroundStyle(deviationPercent < 5 ? .secondary : Color.pnlPositive)
+                    Text("· \(deviationLabel)")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.tertiary)
+                }
+            } else {
+                HStack(spacing: 4) {
+                    Text("未设置目标配置")
+                        .font(Theme.serif(12))
+                        .foregroundStyle(.tertiary)
+                }
             }
 
             // 主体:左 donut + 右 ranked list
@@ -59,10 +74,10 @@ struct BreakdownDonutCard: View {
                         .frame(width: 124, height: 124)
                     VStack(spacing: 2) {
                         Text("共 \(rankedSegments.count) 类")
-                            .font(.system(size: 10, weight: .semibold))
+                            .font(Theme.serif(10, weight: .semibold))
                             .kerning(0.3)
                             .foregroundStyle(.tertiary)
-                        Text(hideBalance ? "¥····" : "¥\(formatShort(breakdown.total))")
+                        Text(hideBalance ? kHiddenAmountMask : "¥\(formatShort(breakdown.total))")
                             .font(.system(size: 14, weight: .bold))
                             .kerning(-0.3)
                             .monospacedDigit()
@@ -78,7 +93,7 @@ struct BreakdownDonutCard: View {
                                 .fill(Color(hex: s.colorHex))
                                 .frame(width: 7, height: 7)
                             Text(s.label)
-                                .font(.system(size: 12))
+                                .font(Theme.serif(12))
                                 .foregroundStyle(.primary)
                             Spacer(minLength: 4)
                             Text(percentString(s.value))
@@ -98,6 +113,10 @@ struct BreakdownDonutCard: View {
         .background(
             RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .fill(Color(.secondarySystemGroupedBackground))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(Theme.Bronze.softBorder, lineWidth: 0.5)
         )
         .cardElevation()
     }

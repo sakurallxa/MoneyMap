@@ -45,20 +45,14 @@ struct AccountsView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                if accounts.isEmpty {
-                    VStack(spacing: 14) {
-                        headerRow
-                        ContentUnavailableView(
-                            "还没有账户",
-                            systemImage: "wallet.pass",
-                            description: Text("点击右上角 + 添加")
-                        )
-                        .padding(.top, 80)
+            if accounts.isEmpty {
+                AccountsEmptyV2(addAction: { showAddSheet = true })
+                    .navigationBarHidden(true)
+                    .sheet(isPresented: $showAddSheet) {
+                        AddAccountSheet()
                     }
-                    .padding(.horizontal, 14)
-                    .padding(.top, 8)
-                } else {
+            } else {
+                ScrollView {
                     VStack(spacing: 14) {
                         headerRow
                         summaryCard
@@ -75,38 +69,33 @@ struct AccountsView: View {
                     .padding(.horizontal, 14)
                     .padding(.top, 8)
                 }
-            }
-            .background(Theme.Palette.pageBgWarm.ignoresSafeArea())
-            .navigationBarHidden(true)
-            .sheet(isPresented: $showAddSheet) {
-                AddAccountSheet()
+                .background(Theme.Palette.pageBgWarm.ignoresSafeArea())
+                .navigationBarHidden(true)
+                .sheet(isPresented: $showAddSheet) {
+                    AddAccountSheet()
+                }
             }
         }
     }
 
-    /// 顶部:账户标题 + 右侧「+」按钮(与标题同一基线)
+    /// 顶部:账户标题 + 右侧「眼睛 + 」按钮(P0-005 PageHeader,P0-006 全局隐藏开关入口)
     private var headerRow: some View {
-        HStack(alignment: .firstTextBaseline) {
-            Text("账户")
-                .font(.system(size: 32, weight: .bold))
-                .foregroundStyle(.primary)
-            Spacer()
-            Button {
-                showAddSheet = true
-            } label: {
-                ZStack {
-                    Circle()
-                        .fill(Theme.Palette.accent)
-                        .frame(width: 36, height: 36)
-                    Image(systemName: "plus")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(.white)
-                }
-                .shadow(color: Theme.Palette.accent.opacity(0.3), radius: 8, x: 0, y: 4)
+        PageHeader(title: "账户", subtitle: accountsSubtitle) {
+            HStack(spacing: 6) {
+                HideBalanceToggle()
+                BronzeAddButton { showAddSheet = true }
             }
-            .alignmentGuide(.firstTextBaseline) { d in d[.bottom] - 6 }
         }
-        .padding(.horizontal, 4)
+    }
+
+    /// P1-013:摘要型副标统一(原来缺失,现填上)
+    private var accountsSubtitle: String? {
+        guard !accounts.isEmpty else { return nil }
+        let total = accounts.count
+        let inv = investmentAccounts.count
+        if total == 0 { return nil }
+        if inv == 0 { return "\(total) 个账户 · 全部现金类" }
+        return "\(total) 个账户 · 投资 \(inv) · 现金 \(total - inv)"
     }
 
     /// 顶部 summary 卡:投资类 + 现金类双列 + 占比 stacked bar
@@ -118,7 +107,7 @@ struct AccountsView: View {
                     .fill(Color.black.opacity(0.06))
                     .frame(width: 1, height: 40)
                     .padding(.horizontal, 12)
-                summaryColumn(label: "现金类", value: cashTotal, share: grandTotal > 0 ? cashTotal / grandTotal : 0, color: Color(hex: "#5B8FF9"))
+                summaryColumn(label: "现金类", value: cashTotal, share: grandTotal > 0 ? cashTotal / grandTotal : 0, color: Theme.Palette.segmentCash)
             }
 
             // stacked bar
@@ -127,7 +116,7 @@ struct AccountsView: View {
                     if grandTotal > 0 {
                         Theme.Palette.accent
                             .frame(width: max(0, geo.size.width * (investmentTotal / grandTotal) - 1))
-                        Color(hex: "#5B8FF9")
+                        Theme.Palette.segmentCash
                             .frame(maxWidth: .infinity)
                     } else {
                         Color.black.opacity(0.08)
@@ -155,19 +144,17 @@ struct AccountsView: View {
                     .fill(color)
                     .frame(width: 7, height: 7)
                 Text(label)
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(Theme.serif(12, weight: .semibold))
                     .foregroundStyle(.secondary)
             }
-            Text(hideBalance ? kHiddenAmountMask : formatCNY(value))
-                .font(.system(size: 20, weight: .bold))
-                .kerning(-0.4)
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-                .foregroundStyle(.primary)
-                .accessibilityLabel(value.accessibilityAmountLabel(prefix: label, hidden: hideBalance))
+            MoneyText(
+                value: value,
+                scale: .metric,
+                hidden: hideBalance
+            )
+            .accessibilityLabel(value.accessibilityAmountLabel(prefix: label, hidden: hideBalance))
             Text(hideBalance ? "占比 ··%" : String(format: "占比 %.1f%%", share * 100))
-                .font(.system(size: 11))
+                .font(Theme.serif(11))
                 .foregroundStyle(.tertiary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -175,12 +162,14 @@ struct AccountsView: View {
 
     private func sectionGroup(title: String, count: Int, accounts: [Account]) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .center, spacing: 6) {
+            HStack(alignment: .center, spacing: 8) {
+                // P2-020:把空态的自绘 clipboard 图标缩到 24px 复用到 section header
+                IconAccountClipboard(size: 24)
                 Text(title)
-                    .font(.system(size: 14, weight: .bold))
+                    .font(Theme.serif(14, weight: .bold))
                     .foregroundStyle(.primary)
                 Text("\(count) 个")
-                    .font(.system(size: 12))
+                    .font(Theme.serif(12))
                     .foregroundStyle(.tertiary)
                 Spacer()
             }
@@ -264,20 +253,13 @@ struct AccountRow: View {
     }
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(alignment: .center, spacing: 12) {
             // 类别色 icon
-            ZStack {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(typeColor.opacity(0.18))
-                Image(systemName: account.type.iconName)
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(typeColor)
-            }
-            .frame(width: 42, height: 42)
+            IconBadge(systemName: account.type.iconName, color: typeColor, size: .lg)
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(account.name)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(Theme.serif(15, weight: .semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
                 subRow
@@ -285,15 +267,25 @@ struct AccountRow: View {
 
             Spacer(minLength: 6)
 
-            VStack(alignment: .trailing, spacing: 3) {
-                Text(hideBalance ? kHiddenAmountMask : CurrencyFormatter.cnyString(totalCNY))
-                    .font(.system(size: 15, weight: .bold))
-                    .monospacedDigit()
-                    .lineLimit(1)
-                Text(rightSubLabel)
-                    .font(.system(size: 10))
-                    .foregroundStyle(.tertiary)
-                    .monospacedDigit()
+            // 右侧:有 rightSubLabel 时双行(投资/黄金);否则单行(现金类),避免 VStack 顶部错位
+            if rightSubLabel.isEmpty {
+                MoneyText(
+                    value: totalCNY,
+                    scale: .body,
+                    hidden: hideBalance
+                )
+            } else {
+                VStack(alignment: .trailing, spacing: 3) {
+                    MoneyText(
+                        value: totalCNY,
+                        scale: .body,
+                        hidden: hideBalance
+                    )
+                    Text(rightSubLabel)
+                        .font(.system(size: 10))
+                        .foregroundStyle(.tertiary)
+                        .monospacedDigit()
+                }
             }
 
             Image(systemName: "chevron.right")
@@ -310,24 +302,31 @@ struct AccountRow: View {
     private var subRow: some View {
         if isInvestmentType {
             if hasPositions {
-                HStack(spacing: 4) {
-                    Text(hideBalance ? "¥····" : (cumulativePnL >= 0 ? "+" : "-") + "¥\(formatShort(abs(cumulativePnL)))")
-                        .font(.system(size: 11, weight: .semibold))
-                        .monospacedDigit()
-                    Text(hideBalance ? "··%" : String(format: "%+.2f%%", cumulativePnLPct))
-                        .font(.system(size: 11))
-                        .monospacedDigit()
+                HStack(spacing: 10) {     // 4 → 10:让金额和率有清晰的视觉间隔
+                    MoneyText(
+                        value: cumulativePnL,
+                        scale: .caption,
+                        signed: true,
+                        hidden: hideBalance,
+                        color: Color.pnlColor(cumulativePnL)
+                    )
+                    PercentText(
+                        value: cumulativePnLPct,
+                        size: 11,
+                        signed: true,
+                        hidden: hideBalance,
+                        color: Color.pnlColor(cumulativePnL)
+                    )
                 }
-                .foregroundStyle(Color.pnlColor(cumulativePnL))
             } else {
                 Text("尚无持仓")
-                    .font(.system(size: 11))
+                    .font(Theme.serif(11))
                     .foregroundStyle(.tertiary)
             }
         } else {
             // 现金账户:账户类型 + 币种 (e.g. 储蓄卡 · CNY / 货币基金 · CNY)
             Text("\(account.type.displayName) · \(account.currency.rawValue)")
-                .font(.system(size: 11))
+                .font(Theme.serif(11))
                 .foregroundStyle(.tertiary)
                 .lineLimit(1)
         }
@@ -346,14 +345,14 @@ struct AccountRow: View {
 
     private var typeColor: Color {
         switch account.type {
-        case .cash: return Color(hex: "#5B8FF9")
-        case .moneyFund: return Color(hex: "#7B68EE")
-        case .fundApp: return Color(hex: "#F4B860")
-        case .brokerA: return Color(hex: "#E63946")
-        case .brokerHK: return Color(hex: "#2A9D8F")
-        case .brokerUS: return Color(hex: "#1ABC9C")
-        case .brokerHKUS: return Color(hex: "#2A9D8F")
-        case .goldDeposit, .goldPhysical: return Color(hex: "#D4AF37")
+        case .cash: return Theme.Palette.segmentCash
+        case .moneyFund: return Theme.Palette.segmentMoneyFund
+        case .fundApp: return Theme.Palette.segmentFund
+        case .brokerA: return Theme.Palette.segmentStockA
+        case .brokerHK: return Theme.Palette.segmentStockHK
+        case .brokerUS: return Theme.Palette.segmentStockUS
+        case .brokerHKUS: return Theme.Palette.segmentStockHK
+        case .goldDeposit, .goldPhysical: return Theme.Palette.segmentGold
         }
     }
 

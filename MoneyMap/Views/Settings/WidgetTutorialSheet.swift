@@ -52,7 +52,7 @@ struct WidgetTutorialSheet: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("完成") { dismiss() }
-                        .font(.system(size: 15, weight: .bold))
+                        .font(Theme.serif(15, weight: .bold))
                         .foregroundStyle(Theme.Palette.accentDark)
                 }
             }
@@ -79,9 +79,9 @@ struct WidgetTutorialSheet: View {
             }
 
             Text("把总资产放上桌面")
-                .font(.system(size: 18, weight: .bold))
+                .font(Theme.serif(18, weight: .bold))
             Text("不打开 App 也能看一眼今日盈亏 ·\n4 步即可设置完毕")
-                .font(.system(size: 12))
+                .font(Theme.serif(12))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .lineSpacing(3)
@@ -110,13 +110,13 @@ struct WidgetTutorialSheet: View {
             VStack(alignment: .leading, spacing: 5) {
                 HStack(spacing: 8) {
                     Text(step.title)
-                        .font(.system(size: 15, weight: .bold))
+                        .font(Theme.serif(15, weight: .bold))
                     Image(systemName: step.symbol)
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(Theme.Palette.accent)
                 }
                 Text(step.detail)
-                    .font(.system(size: 12))
+                    .font(Theme.serif(12))
                     .foregroundStyle(.secondary)
                     .lineSpacing(2)
                     .fixedSize(horizontal: false, vertical: true)
@@ -142,7 +142,7 @@ struct WidgetTutorialSheet: View {
                 .background(Theme.Palette.accent)
                 .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
             Text("Widget 每小时自动刷新一次 · 也可下拉 App 主页强制刷新最新行情")
-                .font(.system(size: 12))
+                .font(Theme.serif(12))
                 .foregroundStyle(Theme.Palette.accentDark)
                 .lineSpacing(2)
                 .fixedSize(horizontal: false, vertical: true)

@@ -90,11 +90,30 @@ final class TransactionRecord {
         TransactionStatus(rawValue: statusRaw) ?? .completed
     }
 
+    /// 不含手续费的"账面金额" — 用于展示"这笔交易的本金"。
     var signedAmount: Double {
         switch type {
         case .buyFund, .buyStock, .dcaDeduct, .withdraw:
             return -amount
         case .sellFund, .sellStock, .dividend, .deposit:
+            return amount
+        case .dcaConfirm, .transfer:
+            return 0
+        }
+    }
+
+    /// 净现金流(含手续费)— 用于"实际从现金账户进出多少钱"的展示。
+    /// 买入/扣款:`-(amount + fee)`,卖出:`+(amount - fee)`。
+    /// 月度净流入、列表 row 右侧金额展示一律走这个。
+    var netSignedCashAmount: Double {
+        switch type {
+        case .buyFund, .buyStock, .dcaDeduct:
+            return -(amount + fee)
+        case .sellFund, .sellStock:
+            return amount - fee
+        case .withdraw:
+            return -amount
+        case .dividend, .deposit:
             return amount
         case .dcaConfirm, .transfer:
             return 0

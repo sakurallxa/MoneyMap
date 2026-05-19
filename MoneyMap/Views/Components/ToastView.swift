@@ -33,12 +33,12 @@ struct ToastOverlayView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.title)
-                    .font(.system(size: 14, weight: .bold))
+                    .font(Theme.serif(14, weight: .bold))
                     .foregroundStyle(.white)
                     .lineLimit(2)
                 if let sub = item.subtitle, !sub.isEmpty {
                     Text(sub)
-                        .font(.system(size: 11))
+                        .font(Theme.serif(11))
                         .foregroundStyle(Color.white.opacity(0.75))
                         .lineLimit(3)
                 }

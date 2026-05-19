@@ -102,84 +102,72 @@ struct DashboardView: View {
         return RebalanceService.overallDeviation(items: items)
     }
 
+    /// 新用户空态判定:无任何账户且无任何持仓
+    private var isEmptyNewUser: Bool {
+        accounts.isEmpty && positions.isEmpty
+    }
+
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 14) {
-                    headerRow
+            if isEmptyNewUser {
+                DashboardEmptyV2(
+                    nickname: userNickname,
+                    onAddAccount: {
+                        NotificationCenter.default.post(name: .switchToTab, object: 1)
+                    },
+                    hideBalance: $hideBalance,
+                    onRefresh: { Task { await refresh() } },
+                    isRefreshing: isRefreshing
+                )
+                .refreshable { await refresh() }
+            } else {
+                ScrollView {
+                    VStack(spacing: 14) {
+                        headerRow
 
-                    HeroPnLCard(
-                        totalAssetsCNY: breakdown.total,
-                        totalPnL: totalPnL,
-                        totalPnLPct: totalPnLPct,
-                        annualizedPct: annualizedPct,
-                        earliestDate: earliestTxDate,
-                        lastRefreshLabel: lastRefreshLabel,
-                        hideBalance: hideBalance
-                    )
+                        HeroPnLCard(
+                            totalAssetsCNY: breakdown.total,
+                            totalPnL: totalPnL,
+                            totalPnLPct: totalPnLPct,
+                            annualizedPct: annualizedPct,
+                            earliestDate: earliestTxDate,
+                            lastRefreshLabel: lastRefreshLabel,
+                            hideBalance: hideBalance
+                        )
 
-                    AssetTrendCard(
-                        snapshots: snapshots,
-                        totalAssetsCNY: breakdown.total,
-                        todayDelta: todayChange.delta,
-                        todayPct: todayChange.pct,
-                        range: assetRangeBinding,
-                        hideBalance: hideBalance
-                    )
+                        AssetTrendCard(
+                            snapshots: snapshots,
+                            totalAssetsCNY: breakdown.total,
+                            todayDelta: todayChange.delta,
+                            todayPct: todayChange.pct,
+                            range: assetRangeBinding,
+                            hideBalance: hideBalance
+                        )
 
-                    BreakdownDonutCard(
-                        breakdown: breakdown,
-                        deviationPercent: overallDeviation,
-                        hideBalance: hideBalance
-                    )
+                        BreakdownDonutCard(
+                            breakdown: breakdown,
+                            deviationPercent: overallDeviation,
+                            hasTargets: !targets.isEmpty,
+                            hideBalance: hideBalance
+                        )
 
-                    Spacer(minLength: 24)
+                        Spacer(minLength: 24)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.top, 8)
                 }
-                .padding(.horizontal, 14)
-                .padding(.top, 8)
-            }
-            .background(Theme.Palette.pageBgWarm.ignoresSafeArea())
-            .navigationBarHidden(true)
-            .refreshable {
-                await refresh()
+                .background(Theme.Palette.pageBgWarm.ignoresSafeArea())
+                .navigationBarHidden(true)
+                .refreshable { await refresh() }
             }
         }
     }
 
-    /// 顶部:钱袋 + 问候 + 隐藏余额 + 刷新,与 hero 卡片左右对齐。
+    /// 顶部:钱袋 + 问候 + 隐藏余额。刷新统一交给下拉手势(P2-019:去掉重复刷新按钮)。
     private var headerRow: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 10) {
-            Text("钱袋")
-                .font(.system(size: 32, weight: .bold))
-                .foregroundStyle(.primary)
-            Text(greeting)
-                .font(.system(size: 14))
-                .foregroundStyle(.secondary)
-            Spacer()
-            Button {
-                withAnimation { hideBalance.toggle() }
-            } label: {
-                Image(systemName: hideBalance ? "eye.slash" : "eye")
-                    .font(.system(size: 17))
-                    .foregroundStyle(.secondary)
-            }
-            .accessibilityLabel("切换余额显示")
-            .accessibilityValue(hideBalance ? "已隐藏" : "已显示")
-            Button {
-                Task { await refresh() }
-            } label: {
-                Image(systemName: "arrow.clockwise")
-                    .font(.system(size: 17))
-                    .foregroundStyle(.secondary)
-                    .rotationEffect(.degrees(isRefreshing ? 360 : 0))
-                    .animation(isRefreshing
-                               ? .linear(duration: 1).repeatForever(autoreverses: false)
-                               : .default,
-                               value: isRefreshing)
-            }
-            .disabled(isRefreshing)
+        PageHeader(title: "钱袋", subtitle: greeting) {
+            HideBalanceToggle()
         }
-        .padding(.horizontal, 4)
     }
 
     @AppStorage("userNickname") private var userNickname: String = ""
@@ -203,7 +191,11 @@ struct DashboardView: View {
 
     private func refresh() async {
         isRefreshing = true
+        // 与启动序列对齐:刷价 → 确认在途 DCA → 写今日快照 → 推 Widget
         await PriceRefreshService.refreshAll(context: context)
+        await DCAService.confirmRipePending(context: context)
+        SnapshotService.recordToday(context: context)
+        WidgetState.push(context: context)
         let f = DateFormatter()
         f.dateFormat = "HH:mm"
         lastRefreshLabel = f.string(from: Date())
@@ -219,27 +211,19 @@ struct TransactionRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(iconBg.opacity(0.12))
-                Image(systemName: iconName)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(iconBg)
-            }
-            .frame(width: 38, height: 38)
+            IconBadge(systemName: iconName, color: iconBg, size: .md)
 
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(tx.type.displayName)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(Theme.serif(15, weight: .semibold))
+                    // P1-015 + P1-016:合并三态为两态显示,在途用统一 StatusPill
                     if tx.status == .pending {
-                        PillTag(text: "在途", color: .orange)
-                    } else if tx.status == .confirmed {
-                        PillTag(text: "已确认", color: .blue)
+                        StatusPill(text: "在途", tone: .pending)
                     }
                 }
                 Text(subtitleText)
-                    .font(.system(size: 12))
+                    .font(Theme.serif(12))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -247,7 +231,7 @@ struct TransactionRow: View {
             Spacer(minLength: 8)
 
             VStack(alignment: .trailing, spacing: 3) {
-                Text(hideAmount ? "¥····" : amountText)
+                Text(hideAmount ? kHiddenAmountMask : amountText)
                     .font(.system(size: 15, weight: .semibold))
                     .monospacedDigit()
                     .foregroundStyle(amountColor)
@@ -264,47 +248,68 @@ struct TransactionRow: View {
         return f.string(from: tx.tradeDate)
     }
 
+    /// P1-012:交易类型图标按三族重新归位,颜色严格遵循 PnL 方向语义
+    /// - **持仓变动 · 对角箭头族**:加仓/卖出/定投 — 钱与持仓同时反向流动
+    /// - **现金流 · 垂直箭头族**:入金/出金 — 现金单边进出
+    /// - **现金事件 · 专属符号**:分红(gift)、转账(arrow.left.arrow.right)
     private var iconName: String {
         switch tx.type {
-        case .dcaDeduct, .dcaConfirm: return "calendar.badge.clock"
-        case .buyFund, .buyStock: return "arrow.down.left"
-        case .sellFund, .sellStock: return "arrow.up.right"
+        // 持仓变动 — 对角线箭头族
+        case .buyFund, .buyStock: return "arrow.down.left"           // 资产进入
+        case .sellFund, .sellStock: return "arrow.up.right"          // 资产卖出
+        case .dcaDeduct, .dcaConfirm: return "arrow.down.left.circle" // 定投扣款 = 进入(带环表明自动)
+        // 现金流 — 垂直箭头族
+        case .deposit: return "arrow.down.to.line"
+        case .withdraw: return "arrow.up.to.line"
+        // 现金事件 — 专属符号
         case .dividend: return "gift.fill"
         case .transfer: return "arrow.left.arrow.right"
-        case .deposit: return "plus"
-        case .withdraw: return "minus"
         }
     }
 
+    /// 颜色按"钱/持仓方向"统一:增加 = pnlUp(红),减少 = pnlDown(绿),中性 = 铜
     private var iconBg: Color {
         switch tx.type {
-        case .dcaDeduct, .dcaConfirm: return Theme.Palette.accent
-        case .buyFund, .buyStock: return .pnlPositive
-        case .sellFund, .sellStock: return .pnlNegative
-        case .dividend: return .orange
-        case .transfer: return Color(hex: "#7B68EE")
-        case .deposit: return .pnlNegative
-        case .withdraw: return Color(hex: "#8E8E93")
+        // 持仓增加 / 现金减少 — 红
+        case .buyFund, .buyStock, .dcaDeduct, .dcaConfirm:
+            return Theme.Palette.pnlUp
+        // 持仓减少 / 现金增加 — 绿
+        case .sellFund, .sellStock:
+            return Theme.Palette.pnlDown
+        // 现金增加 — 红
+        case .deposit, .dividend:
+            return Theme.Palette.pnlUp
+        // 现金减少 — 绿
+        case .withdraw:
+            return Theme.Palette.pnlDown
+        // 中性 — 铜
+        case .transfer:
+            return Theme.Bronze.dark
         }
     }
 
     private var subtitleText: String {
+        let base: String
         switch tx.type {
         case .transfer:
-            return "\(tx.fromAccountName) → \(tx.toAccountName)"
+            base = "\(tx.fromAccountName) → \(tx.toAccountName)"
         case .dividend:
-            if !tx.assetName.isEmpty { return "\(tx.assetName) · \(tx.assetCode)" }
-            return tx.toAccountName
+            base = !tx.assetName.isEmpty ? "\(tx.assetName) · \(tx.assetCode)" : tx.toAccountName
         case .deposit, .withdraw:
-            return tx.toAccountName.isEmpty ? tx.fromAccountName : tx.toAccountName
+            base = tx.toAccountName.isEmpty ? tx.fromAccountName : tx.toAccountName
         default:
-            if !tx.assetName.isEmpty { return "\(tx.assetName) · \(tx.assetCode)" }
-            return tx.toAccountName
+            base = !tx.assetName.isEmpty ? "\(tx.assetName) · \(tx.assetCode)" : tx.toAccountName
         }
+        // 手续费 > 0 时附加显示
+        if tx.fee > 0 {
+            return base + " · 含费 ¥\(String(format: "%.2f", tx.fee))"
+        }
+        return base
     }
 
     private var amountText: String {
-        let signed = tx.signedAmount
+        // 展示净现金流(含手续费) — 用户在 row 上看到的就是实际进出账户的金额
+        let signed = tx.netSignedCashAmount
         if signed == 0 {
             return CurrencyFormatter.cnyString(tx.amount)
         }
@@ -312,7 +317,7 @@ struct TransactionRow: View {
     }
 
     private var amountColor: Color {
-        Color.pnlColor(tx.signedAmount)
+        Color.pnlColor(tx.netSignedCashAmount)
     }
 }
 

@@ -57,11 +57,12 @@ struct RebalanceView: View {
         return .urgent
     }
 
+    /// P2-025:文案统一为"状态描述派",三档读起来平行
     private var statusLabel: String {
         switch status {
         case .healthy: return "配置健康"
-        case .suggest: return "可以再平衡"
-        case .urgent:  return "需要再平衡"
+        case .suggest: return "轻度偏离"
+        case .urgent:  return "显著偏离"
         }
     }
 
@@ -73,11 +74,12 @@ struct RebalanceView: View {
         }
     }
 
+    /// P0-002:使用独立语义色,不再复用 PnL 红绿。
     private var statusColor: Color {
         switch status {
-        case .healthy: return .pnlNegative   // 绿
-        case .suggest: return .orange
-        case .urgent:  return .pnlPositive   // 红
+        case .healthy: return Theme.Semantic.success
+        case .suggest: return Theme.Semantic.warning
+        case .urgent:  return Theme.Semantic.danger
         }
     }
 
@@ -105,8 +107,10 @@ struct RebalanceView: View {
             .padding(.top, 8)
         }
         .background(Theme.Palette.pageBgWarm.ignoresSafeArea())
+        // P1-009:用 inline 模式让 NavigationBar 走 appearance 注入的衬线字体,
+        // 不再用 .large(.large 强制 SF Pro,与全局衬线主张冲突)
         .navigationTitle("再平衡")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             if !targets.isEmpty {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -120,7 +124,17 @@ struct RebalanceView: View {
             }
         }
         .sheet(isPresented: $showEditSheet) { TargetAllocationSheet() }
-        .sheet(item: $prefill) { p in AddTransactionSheet(prefill: p) }
+        .sheet(item: $prefill) { p in
+            // P0-H1:走统一的 TransactionFormView,替换已删除的 AddTransactionSheet。
+            // 这样再平衡入口和「记一笔」入口共用同一套手续费率 / avgCost / snapshot 逻辑。
+            NavigationStack {
+                TransactionFormView(
+                    type: p.action.formType,
+                    onSave: { prefill = nil },
+                    rebalancePrefill: p
+                )
+            }
+        }
     }
 
     private var emptyState: some View {
@@ -129,9 +143,9 @@ struct RebalanceView: View {
                 .font(.system(size: 56))
                 .foregroundStyle(.tertiary)
             Text("还没设置目标配置")
-                .font(.headline)
+                .font(Theme.serif(17, weight: .semibold))
             Text("设置每类资产的目标比例,系统会告诉你需要买入或卖出多少来匹配你的目标")
-                .font(.subheadline)
+                .font(Theme.serif(14))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 30)
@@ -139,7 +153,7 @@ struct RebalanceView: View {
                 showEditSheet = true
             } label: {
                 Text("现在设置")
-                    .font(.subheadline.weight(.semibold))
+                    .font(Theme.serif(14, weight: .semibold))
                     .padding(.horizontal, 28)
                     .padding(.vertical, 12)
                     .background(Color.accentColor)
@@ -159,7 +173,7 @@ struct RebalanceView: View {
             // 顶行:整体偏离度 + (模式 + 上次再平衡)同一水平线
             HStack {
                 Text("整体偏离度")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(Theme.serif(13, weight: .semibold))
                     .foregroundStyle(.secondary)
                 Spacer()
                 HStack(spacing: 6) {
@@ -167,7 +181,7 @@ struct RebalanceView: View {
                         Image(systemName: "scalemass")
                             .font(.system(size: 10, weight: .semibold))
                         Text(currentModel.displayName + "型")
-                            .font(.system(size: 11, weight: .bold))
+                            .font(Theme.serif(11, weight: .bold))
                     }
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 9)
@@ -195,7 +209,7 @@ struct RebalanceView: View {
                 Image(systemName: statusIcon)
                     .font(.system(size: 13, weight: .bold))
                 Text(statusLabel)
-                    .font(.system(size: 15, weight: .bold))
+                    .font(Theme.serif(15, weight: .bold))
             }
             .foregroundStyle(statusColor)
             .padding(.horizontal, 12)
@@ -223,7 +237,7 @@ struct RebalanceView: View {
             // 标题 + 顶部右侧 legend(含「容差 ±3%」 唯一说明)
             HStack(alignment: .firstTextBaseline) {
                 Text("当前 vs 目标")
-                    .font(.system(size: 17, weight: .bold))
+                    .font(Theme.serif(17, weight: .bold))
                 Spacer()
                 HStack(spacing: 10) {
                     legendItem(label: "当前", isDot: true)
@@ -258,7 +272,7 @@ struct RebalanceView: View {
                         .fill(Color(hex: item.assetClass.hexColor))
                         .frame(width: 9, height: 9)
                     Text(item.assetClass.displayName)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(Theme.serif(15, weight: .semibold))
                 }
                 Spacer()
                 if within {
@@ -272,7 +286,7 @@ struct RebalanceView: View {
 
             // 单行聚合金额 + 百分比说明
             Text(aggregatedSummary(item))
-                .font(.system(size: 11))
+                .font(Theme.serif(11))
                 .foregroundStyle(.tertiary)
         }
     }
@@ -282,7 +296,7 @@ struct RebalanceView: View {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 9, weight: .bold))
             Text("合格")
-                .font(.system(size: 11, weight: .bold))
+                .font(Theme.serif(11, weight: .bold))
         }
         .foregroundStyle(Color.pnlNegative)
         .padding(.horizontal, 8)
@@ -293,7 +307,7 @@ struct RebalanceView: View {
 
     private func aggregatedSummary(_ item: RebalanceItem) -> String {
         if hideBalance {
-            return "当前 \(kHiddenAmountMask) → 目标 \(kHiddenAmountMask)"
+            return "金额已隐藏"
         }
         return String(format: "当前 ¥%@(%.1f%%) → 目标 ¥%@(%.0f%%)",
                       formatShort(item.currentValue),
@@ -376,7 +390,7 @@ struct RebalanceView: View {
             }
             .frame(width: 16, height: 14)
             Text(label)
-                .font(.system(size: 10, weight: .semibold))
+                .font(Theme.serif(10, weight: .semibold))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .fixedSize(horizontal: true, vertical: false)
@@ -388,11 +402,11 @@ struct RebalanceView: View {
     private var suggestionsCard: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("调整建议")
-                .font(.system(size: 17, weight: .bold))
+                .font(Theme.serif(17, weight: .bold))
 
             if sellItems.isEmpty && buyItems.isEmpty {
                 Text("无需调整 · 当前组合在目标范围内 👍")
-                    .font(.subheadline)
+                    .font(Theme.serif(14))
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.vertical, 18)
@@ -433,8 +447,8 @@ struct RebalanceView: View {
 
     private func groupHeader(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 10, weight: .bold))
-            .kerning(1.2)
+            .font(Theme.TypeToken.eyebrow(10))
+            .kerning(Theme.TypeToken.eyebrowKerning)
             .foregroundStyle(.tertiary)
             .padding(.top, 2)
     }
@@ -454,7 +468,7 @@ struct RebalanceView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("\(isBuy ? "买入" : "卖出") · \(item.assetClass.displayName)")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(Theme.serif(14, weight: .semibold))
                 Text(String(format: "%.1f%% → %.0f%%", item.currentPercent, item.targetPercent))
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
@@ -476,7 +490,7 @@ struct RebalanceView: View {
                 )
             } label: {
                 Text("去交易")
-                    .font(.system(size: 11, weight: .bold))
+                    .font(Theme.serif(11, weight: .bold))
                     .foregroundStyle(Theme.Palette.accentDark)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)

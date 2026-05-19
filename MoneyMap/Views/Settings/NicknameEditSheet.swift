@@ -21,7 +21,7 @@ struct NicknameEditSheet: View {
 
     private var preview: String {
         let s = surname.trimmingCharacters(in: .whitespaces)
-        if s.isEmpty { return "陈\(gender.displayName)" }
+        if s.isEmpty { return "X\(gender.displayName)" }
         return s + gender.displayName
     }
 
@@ -35,10 +35,10 @@ struct NicknameEditSheet: View {
                 // 预览
                 VStack(spacing: 10) {
                     Text("怎么称呼您?")
-                        .font(.system(size: 13))
+                        .font(Theme.serif(13))
                         .foregroundStyle(.secondary)
                     Text(preview)
-                        .font(.system(size: 38, weight: .bold))
+                        .font(Theme.serif(38, weight: .bold))
                         .foregroundStyle(Theme.Palette.accentDark)
                 }
                 .frame(maxWidth: .infinity)
@@ -47,12 +47,12 @@ struct NicknameEditSheet: View {
 
                 VStack(alignment: .leading, spacing: 14) {
                     HStack {
-                        Text("你的姓")
-                            .font(.system(size: 13, weight: .semibold))
+                        Text("您的姓")
+                            .font(Theme.serif(13, weight: .semibold))
                             .foregroundStyle(.secondary)
                         Spacer()
                         TextField("", text: $surname)
-                            .font(.system(size: 17, weight: .semibold))
+                            .font(Theme.serif(17, weight: .semibold))
                             .multilineTextAlignment(.trailing)
                             .focused($isFocused)
                             .submitLabel(.done)
@@ -66,12 +66,26 @@ struct NicknameEditSheet: View {
                             .fill(Color(.secondarySystemGroupedBackground))
                     )
 
-                    Picker("称呼", selection: $gender) {
+                    // 自绘 segmented — 系统 Picker(.segmented) 用 UISegmentedControl,
+                    // 文字不走思源宋体。这里用思源宋体 + 铜色选中态,与项目语言统一。
+                    HStack(spacing: 8) {
                         ForEach(Gender.allCases, id: \.self) { g in
-                            Text(g.displayName).tag(g)
+                            Button {
+                                gender = g
+                            } label: {
+                                Text(g.displayName)
+                                    .font(Theme.serif(14, weight: .semibold))
+                                    .foregroundStyle(gender == g ? .white : .primary)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 10)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                            .fill(gender == g ? Theme.Palette.accent : Color.black.opacity(0.045))
+                                    )
+                            }
+                            .buttonStyle(.plain)
                         }
                     }
-                    .pickerStyle(.segmented)
                 }
                 .padding(.horizontal, 20)
 
@@ -83,11 +97,12 @@ struct NicknameEditSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("取消") { dismiss() }
+                        .foregroundStyle(Theme.Palette.accentDark)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("保存") { save() }
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(canSave ? Theme.Palette.accentDark : .secondary)
+                        .font(Theme.serif(15, weight: .bold))
+                        .foregroundStyle(canSave ? Theme.Palette.accentDark : Theme.Palette.accentDark.opacity(0.35))
                         .disabled(!canSave)
                 }
             }
@@ -98,7 +113,10 @@ struct NicknameEditSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        // 直接 large — 配合 onAppear 自动唤起键盘,避免"半屏 → 大屏"的 resize 跳变。
+        // 之前用 [.medium, .large] 默认落 medium,0.3s 后 isFocused = true 触发键盘,
+        // iOS 自动把 detent 拔到 large,视觉上是个明显的卡顿。
+        .presentationDetents([.large])
         .presentationDragIndicator(.visible)
     }
 

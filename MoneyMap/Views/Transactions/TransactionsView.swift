@@ -36,7 +36,7 @@ struct TransactionsView: View {
         switch filter {
         case .all: break
         case .pending: list = list.filter { $0.status == .pending }
-        case .completed: list = list.filter { $0.status == .completed || $0.status == .confirmed }
+        case .completed: list = list.filter { $0.status.isSettled }
         }
 
         // Year filter
@@ -72,7 +72,8 @@ struct TransactionsView: View {
             cal.component(.year, from: $0.tradeDate) == cal.component(.year, from: now) &&
             cal.component(.month, from: $0.tradeDate) == cal.component(.month, from: now)
         }
-        let netFlow = thisMonth.reduce(0.0) { $0 + $1.signedAmount }
+        // 月度净流入用净现金流(含手续费),与列表 row 展示一致
+        let netFlow = thisMonth.reduce(0.0) { $0 + $1.netSignedCashAmount }
         return (thisMonth.count, netFlow)
     }
 
@@ -87,33 +88,54 @@ struct TransactionsView: View {
 
     private var allCount: Int { transactions.count }
     private var pendingCount: Int { pendingTxs.count }
-    private var completedCount: Int { transactions.filter { $0.status == .completed || $0.status == .confirmed }.count }
+    private var completedCount: Int { transactions.filter { $0.status.isSettled }.count }
 
     var body: some View {
         NavigationStack {
-            List {
+            if transactions.isEmpty {
+                transactionsEmptyContainer
+            } else {
+                listContent
+            }
+        }
+    }
+
+    private var transactionsEmptyContainer: some View {
+        TransactionsEmptyV2(
+            monthCountText: navSubtitle,
+            addAction: { showPicker = true }
+        )
+        .navigationBarHidden(true)
+        .sheet(isPresented: $showPicker) {
+            TransactionTypePickerView()
+        }
+    }
+
+    @ViewBuilder
+    private var listContent: some View {
+        List {
+            Section {
+                headerRow
+                    .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 10, trailing: 0))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                searchBar
+                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 8, trailing: 0))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                filterStrip
+                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 12, trailing: 0))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+            }
+
+            if groupedByDate.isEmpty {
                 Section {
-                    headerRow
-                        .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 10, trailing: 0))
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
-                    searchBar
-                        .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 8, trailing: 0))
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
-                    filterStrip
-                        .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 12, trailing: 0))
+                    noMatchEmptyState
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
                 }
-
-                if groupedByDate.isEmpty {
-                    Section {
-                        emptyState
-                            .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
-                    }
-                } else {
+            } else {
                     ForEach(groupedByDate, id: \.date) { group in
                         Section {
                             ForEach(group.items) { tx in
@@ -134,7 +156,7 @@ struct TransactionsView: View {
                             }
                         } header: {
                             Text(formatGroupDate(group.date))
-                                .font(.system(size: 11, weight: .bold))
+                                .font(Theme.serif(11, weight: .bold))
                                 .kerning(1)
                                 .foregroundStyle(.tertiary)
                                 .textCase(nil)
@@ -166,7 +188,6 @@ struct TransactionsView: View {
             } message: {
                 Text(deleteAlertMessage)
             }
-        }
     }
 
     private var deleteAlertMessage: String {
@@ -180,38 +201,20 @@ struct TransactionsView: View {
     private func performDelete(_ tx: TransactionRecord) {
         do {
             try TransactionReversalService.deleteWithReversal(tx, context: context)
+            SnapshotService.recordToday(context: context)
             ToastManager.shared.success("已删除并回退资产")
         } catch {
             ToastManager.shared.error("删除失败", subtitle: error.localizedDescription)
         }
     }
 
-    /// 顶部:交易标题 + 月度小字 + 右侧「+」按钮(与标题同基线)
+    /// 顶部:交易标题 + 月度小字 + 右侧「眼睛 + 」按钮(P0-005, P0-006)
     private var headerRow: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 10) {
-            Text("交易")
-                .font(.system(size: 32, weight: .bold))
-                .foregroundStyle(.primary)
-            Text(navSubtitle)
-                .font(.system(size: 14))
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.85)
-            Spacer()
-            Button {
-                showPicker = true
-            } label: {
-                ZStack {
-                    Circle()
-                        .fill(Theme.Palette.accent)
-                        .frame(width: 36, height: 36)
-                    Image(systemName: "plus")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(.white)
-                }
-                .shadow(color: Theme.Palette.accent.opacity(0.3), radius: 8, x: 0, y: 4)
+        PageHeader(title: "交易", subtitle: navSubtitle) {
+            HStack(spacing: 6) {
+                HideBalanceToggle()
+                BronzeAddButton { showPicker = true }
             }
-            .alignmentGuide(.firstTextBaseline) { d in d[.bottom] - 6 }
         }
     }
 
@@ -228,7 +231,7 @@ struct TransactionsView: View {
                 .font(.system(size: 15))
                 .foregroundStyle(.secondary)
             TextField("搜索资产、备注、账户...", text: $searchText)
-                .font(.system(size: 14))
+                .font(Theme.serif(14))
             if !searchText.isEmpty {
                 Button {
                     searchText = ""
@@ -263,7 +266,7 @@ struct TransactionsView: View {
                 } label: {
                     HStack(spacing: 3) {
                         Text(selectedYear.map { "\($0) 年" } ?? "全部年份")
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(Theme.serif(13, weight: .semibold))
                         Image(systemName: "chevron.down")
                             .font(.system(size: 10, weight: .semibold))
                     }
@@ -273,46 +276,37 @@ struct TransactionsView: View {
                     .background(Color.black.opacity(0.045))
                     .clipShape(Capsule())
                 }
+                .menuStyle(.button)
+                .buttonStyle(.plain)
+                .tint(.primary)
             }
         }
         .padding(.horizontal, 6)
     }
 
+    /// P1-016:统一走 SegmentedChip
     @ViewBuilder
     private func chipButton(_ f: TxFilterType, count: Int) -> some View {
-        let selected = filter == f
-        Button {
+        SegmentedChip(title: f.displayName, count: count, selected: filter == f) {
             withAnimation(.easeInOut(duration: 0.15)) { filter = f }
-        } label: {
-            HStack(spacing: 4) {
-                Text(f.displayName)
-                    .font(.system(size: 13, weight: .semibold))
-                Text("\(count)")
-                    .font(.system(size: 11))
-                    .opacity(0.5)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 7)
-            .background(selected ? Color.primary : Color.black.opacity(0.045))
-            .foregroundStyle(selected ? Color(.systemBackground) : .primary)
-            .clipShape(Capsule())
         }
-        .buttonStyle(.plain)
     }
 
-    private var emptyState: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "list.bullet.rectangle")
-                .font(.system(size: 40))
-                .foregroundStyle(.tertiary)
-            Text(searchText.isEmpty ? "暂无符合条件的交易" : "没找到匹配的交易")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-            Text("点右上 + 记一笔新交易")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
+    /// 已有交易但当前过滤命中 0
+    private var noMatchEmptyState: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 36, weight: .light))
+                .foregroundStyle(Theme.EmptyV2.text3)
+                .padding(.bottom, 2)
+            Text(searchText.isEmpty ? "没有符合条件的交易" : "没找到匹配的交易")
+                .font(Theme.serif(15, weight: .semibold))
+                .foregroundStyle(Theme.EmptyV2.text1)
+            Text("换个状态、年份或搜索词试试")
+                .font(Theme.serif(12))
+                .foregroundStyle(Theme.EmptyV2.text2)
         }
-        .frame(maxWidth: .infinity, minHeight: 200)
+        .frame(maxWidth: .infinity, minHeight: 220)
     }
 
     private func formatGroupDate(_ d: Date) -> String {

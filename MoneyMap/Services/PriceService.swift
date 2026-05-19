@@ -50,7 +50,7 @@ enum PriceService {
         let (data, response) = try await session.data(from: url)
         let httpStatus = (response as? HTTPURLResponse)?.statusCode ?? -1
         let preview = String(data: data, encoding: .utf8)?.prefix(200) ?? "<binary>"
-        print("📦 [Fund-TTJJ \(code)] HTTP \(httpStatus) bytes=\(data.count) body=\(preview)")
+        debugLog("📦 [Fund-TTJJ \(code)] HTTP \(httpStatus) bytes=\(data.count) body=\(preview)")
         guard let text = String(data: data, encoding: .utf8),
               let start = text.firstIndex(of: "{"),
               let end = text.lastIndex(of: "}")
@@ -86,7 +86,7 @@ enum PriceService {
             if let (infoData, infoRes) = try? await session.data(for: req) {
                 let httpStatus = (infoRes as? HTTPURLResponse)?.statusCode ?? -1
                 let preview = String(data: infoData, encoding: .utf8)?.prefix(200) ?? "<binary>"
-                print("📦 [Fund-DJ-info \(code)] HTTP \(httpStatus) bytes=\(infoData.count) body=\(preview)")
+        debugLog("📦 [Fund-DJ-info \(code)] HTTP \(httpStatus) bytes=\(infoData.count) body=\(preview)")
                 if let obj = try? JSONSerialization.jsonObject(with: infoData) as? [String: Any],
                    let dataDict = obj["data"] as? [String: Any] {
                     name = dataDict["fd_name"] as? String
@@ -103,7 +103,7 @@ enum PriceService {
         let (navData, navRes) = try await session.data(for: navReq)
         let httpStatus = (navRes as? HTTPURLResponse)?.statusCode ?? -1
         let preview = String(data: navData, encoding: .utf8)?.prefix(200) ?? "<binary>"
-        print("📦 [Fund-DJ-nav \(code)] HTTP \(httpStatus) bytes=\(navData.count) body=\(preview)")
+        debugLog("📦 [Fund-DJ-nav \(code)] HTTP \(httpStatus) bytes=\(navData.count) body=\(preview)")
 
         guard let obj = try? JSONSerialization.jsonObject(with: navData) as? [String: Any],
               let dataDict = obj["data"] as? [String: Any],
@@ -213,7 +213,7 @@ enum PriceService {
         let (data, response) = try await session.data(for: req)
         let httpStatus = (response as? HTTPURLResponse)?.statusCode ?? -1
         let preview = String(data: data, encoding: .utf8)?.prefix(200) ?? "<binary>"
-        print("📦 [US-Sina \(symbol)] HTTP \(httpStatus) bytes=\(data.count) body=\(preview)")
+        debugLog("📦 [US-Sina \(symbol)] HTTP \(httpStatus) bytes=\(data.count) body=\(preview)")
 
         // 解析 var hq_str_gb_aapl="苹果,300.23,0.68,时间,2.02,...";
         guard let eqIdx = data.firstIndex(of: UInt8(ascii: "=")),
@@ -270,7 +270,7 @@ enum PriceService {
         let (data, response) = try await session.data(for: req)
         let httpStatus = (response as? HTTPURLResponse)?.statusCode ?? -1
         let preview = String(data: data, encoding: .utf8)?.prefix(300) ?? "<binary>"
-        print("📦 [US-Yahoo \(symbol)] HTTP \(httpStatus) bytes=\(data.count) body=\(preview)")
+        debugLog("📦 [US-Yahoo \(symbol)] HTTP \(httpStatus) bytes=\(data.count) body=\(preview)")
         guard let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let chart = obj["chart"] as? [String: Any],
               let results = chart["result"] as? [[String: Any]],
@@ -480,7 +480,7 @@ enum PriceService {
         let (data, response) = try await session.data(for: req)
         let httpStatus = (response as? HTTPURLResponse)?.statusCode ?? -1
         let preview = String(data: data, encoding: .utf8)?.prefix(200) ?? "<binary>"
-        print("📦 [FX-Sina \(pair)] HTTP \(httpStatus) bytes=\(data.count) body=\(preview)")
+        debugLog("📦 [FX-Sina \(pair)] HTTP \(httpStatus) bytes=\(data.count) body=\(preview)")
 
         guard let text = String(data: data, encoding: .utf8),
               let firstQ = text.firstIndex(of: "\""),

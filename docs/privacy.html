@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>钱袋 · 隐私政策 / Privacy Policy</title>
+<style>
+  :root {
+    --bg: #F2EDE4;
+    --paper: #FFFFFF;
+    --ink-1: #2A1E12;
+    --ink-2: rgba(60,40,20,0.62);
+    --bronze: #C8956D;
+    --bronze-dark: #A67849;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink-1);
+    font-family: "Songti SC", "Source Han Serif SC", "Noto Serif SC", serif;
+    line-height: 1.85;
+    padding: 60px 24px;
+  }
+  .wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    background: var(--paper);
+    border-radius: 22px;
+    padding: 44px 36px;
+    box-shadow: 0 8px 28px rgba(60,40,20,0.06);
+  }
+  h1 {
+    margin: 0 0 6px;
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--ink-1);
+  }
+  .subtitle {
+    color: var(--ink-2);
+    font-size: 14px;
+    margin-bottom: 24px;
+    letter-spacing: 0.6px;
+  }
+  h2 {
+    margin: 32px 0 10px;
+    font-size: 18px;
+    color: var(--bronze-dark);
+    letter-spacing: 0.4px;
+  }
+  p { color: var(--ink-1); font-size: 15px; }
+  hr {
+    border: 0;
+    height: 0.6px;
+    background: linear-gradient(90deg, transparent, var(--bronze) 50%, transparent);
+    margin: 40px 0 28px;
+  }
+  .meta {
+    color: var(--ink-2);
+    font-size: 12px;
+    margin-top: 32px;
+    text-align: center;
+  }
+  ul { padding-left: 20px; }
+  ul li { margin: 4px 0; }
+  code {
+    background: rgba(60,40,20,0.06);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>钱袋 · 隐私政策</h1>
+  <div class="subtitle">最后更新:2026 年 5 月</div>
+
+  <h2>一句话总结</h2>
+  <p>钱袋是一款本地优先的个人资产记账 App。所有资产数据存储在你自己的设备本地,可选通过你自己的 Apple ID 加密同步到 iCloud。我们没有后端服务器,不收集任何用户信息,不做任何行为追踪。</p>
+
+  <h2>我们收集什么数据</h2>
+  <p>不收集。钱袋没有用户注册系统,没有账号体系,没有后端数据接收端。你输入的资产、交易、定投、目标配置等信息全部存储在 iPhone / iPad 的本地数据库中。</p>
+
+  <h2>关于 iCloud 同步</h2>
+  <p>你可以在「设置 → 跨设备 → iCloud 同步」选择启用该功能。启用后,你的资产数据通过你自己的 Apple ID 加密上传到你的 iCloud 私有数据库(CloudKit Private Database)。这部分数据始终在你的 iCloud 账户内,我们(开发者)不接触、不读取、不能访问。</p>
+
+  <h2>关于行情数据</h2>
+  <p>钱袋向以下公开行情源发送资产代码(如「005827」或「AAPL」)以拉取最新价格:</p>
+  <ul>
+    <li>天天基金 / 蛋卷基金(基金净值)</li>
+    <li>新浪财经(A 股、港美股、汇率)</li>
+    <li>雅虎财经(港美股、汇率)</li>
+    <li>上海黄金交易所(黄金现货)</li>
+  </ul>
+  <p>这些请求只包含资产代码,不携带任何用户标识、设备标识或账户信息。钱袋不在请求中加 cookie / token / userAgent 指纹。</p>
+
+  <h2>关于第三方追踪</h2>
+  <p>没有。钱袋不集成任何分析 SDK、广告 SDK 或追踪库。我们不调用 IDFA、不获取设备标识符、不做行为埋点。</p>
+
+  <h2>设备权限</h2>
+  <p>钱袋可能在以下场景请求设备权限:</p>
+  <ul>
+    <li><strong>Face ID / Touch ID</strong>:仅在你主动启用「Face ID 解锁」开关后调用,用于本地身份验证。验证结果不离开你的设备。</li>
+    <li><strong>网络</strong>:用于拉取行情数据。</li>
+  </ul>
+  <p>钱袋不请求位置、通讯录、相册、相机、麦克风等任何敏感权限。</p>
+
+  <h2>数据导出与删除</h2>
+  <p>你可以随时在「设置 → 数据备份」一键导出 .json 完整备份或 .csv 持仓表格。卸载钱袋会删除所有本地数据;关闭 iCloud 同步后,你可以在 iCloud 设置中删除钱袋的云端数据。</p>
+
+  <h2>儿童隐私</h2>
+  <p>钱袋是一款理财工具,不针对 13 岁以下儿童设计。我们不收集任何信息,因此也不会收集儿童信息。</p>
+
+  <h2>本政策的变更</h2>
+  <p>如本政策发生重大变更,我们会在本页面更新「最后更新」日期。重大变更包括但不限于:新增数据收集、引入第三方 SDK、改变 iCloud 同步范围。</p>
+
+  <h2>联系我们</h2>
+  <p>关于本政策的任何疑问,可发邮件至:<a href="mailto:myrt.chaos@gmail.com"><code>myrt.chaos@gmail.com</code></a></p>
+
+  <hr/>
+
+  <h1 style="font-size:22px;margin-top:0">Privacy Policy (English)</h1>
+  <div class="subtitle">Last updated: May 2026</div>
+
+  <p><strong>One-line summary:</strong> MoneyMap (钱袋) is a local-first personal finance tracker. All your asset data stays on your device. Optional iCloud sync uses your own Apple ID. We have no backend, no account system, no tracking.</p>
+
+  <h2>What we collect</h2>
+  <p>Nothing. MoneyMap has no user registration, no accounts, no backend. Your accounts, holdings, transactions, and DCA plans are stored locally on your iPhone/iPad.</p>
+
+  <h2>iCloud Sync</h2>
+  <p>You may enable iCloud sync under Settings. When enabled, your data is encrypted and uploaded to your private iCloud (CloudKit Private Database) under your Apple ID. We (the developer) cannot access this data.</p>
+
+  <h2>Market data</h2>
+  <p>MoneyMap sends asset codes (e.g. "005827" or "AAPL") to public price feeds (TTJJ, Danjuan, Sina, Yahoo, SGE) to fetch current prices. Requests contain only the asset code; no user identifier, device identifier, or account info is included.</p>
+
+  <h2>Third-party tracking</h2>
+  <p>None. MoneyMap has no analytics SDK, no advertising SDK, no behavioral tracking.</p>
+
+  <h2>Device permissions</h2>
+  <ul>
+    <li><strong>Face ID / Touch ID</strong> — only invoked when you enable Face ID unlock. Result never leaves your device.</li>
+    <li><strong>Network</strong> — for fetching market prices.</li>
+  </ul>
+  <p>MoneyMap does not request location, contacts, photos, camera, or microphone access.</p>
+
+  <h2>Data export & deletion</h2>
+  <p>You can export full .json backup or .csv holdings table anytime under Settings. Uninstalling MoneyMap removes all local data. After disabling iCloud sync, you can also remove cloud data via iOS Settings.</p>
+
+  <h2>Children's privacy</h2>
+  <p>MoneyMap is a personal finance tool not designed for children under 13. Since we collect nothing, we collect nothing from children either.</p>
+
+  <h2>Changes</h2>
+  <p>If this policy changes materially, we update the "Last updated" date.</p>
+
+  <h2>Contact</h2>
+  <p>Questions? Email: <a href="mailto:myrt.chaos@gmail.com"><code>myrt.chaos@gmail.com</code></a></p>
+
+  <div class="meta">© 2026 钱袋 · MoneyMap</div>
+
+</div>
+</body>
+</html>

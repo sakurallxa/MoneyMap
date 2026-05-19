@@ -28,3 +28,14 @@ Carthage/Build/
 
 # Logs
 *.log
+
+# 原始手机截图(可能含真实账户数据 — 不入库)
+IMG_*.PNG
+IMG_*.png
+
+# App Store 营销文案(本地草稿,不公开)
+AppStoreMetadata.md
+
+# Source Han Serif OTF 字体(88MB,可自行下载)
+# 见 MoneyMap/Fonts/README.md
+MoneyMap/Fonts/*.otf

@@ -8,6 +8,7 @@ enum CodeFetchStatus {
 struct AddPositionSheet: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
+    @Query private var allPositions: [Position]   // P1:用于查重
     let account: Account
 
     @State private var assetCode = ""
@@ -17,6 +18,7 @@ struct AddPositionSheet: View {
     @State private var lastPriceText = ""
     @State private var status: CodeFetchStatus = .idle
     @State private var fetchTask: Task<Void, Never>?
+    @State private var duplicateExisting: Position?     // P1:命中同账户同资产时的待合并目标
     @FocusState private var focusedField: Field?
 
     enum Field { case code, name, shares, avgCost, price }
@@ -83,31 +85,40 @@ struct AddPositionSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("取消") { dismiss() }
+                        .foregroundStyle(Theme.Palette.accentDark)
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("保存") { save() }.disabled(!canSave)
+                    Button("保存") { save() }
+                        .font(Theme.serif(15, weight: .bold))
+                        .foregroundStyle(canSave ? Theme.Palette.accentDark : Theme.Palette.accentDark.opacity(0.35))
+                        .disabled(!canSave)
                 }
             }
             .onChange(of: assetCode) { _, _ in scheduleFetch() }
+            .alert(
+                "「\(duplicateExisting?.assetName ?? "")」已在该账户存在",
+                isPresented: Binding(
+                    get: { duplicateExisting != nil },
+                    set: { if !$0 { duplicateExisting = nil } }
+                )
+            ) {
+                Button("合并加仓") { mergeIntoExisting() }
+                Button("取消", role: .cancel) { duplicateExisting = nil }
+            } message: {
+                Text("已有 \(String(format: "%.2f", duplicateExisting?.shares ?? 0)) 份。合并将累加份额并按金额加权重算成本。")
+            }
         }
     }
 
     private var accountTile: some View {
         HStack(spacing: 12) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Color(hex: "#5B8FF9").opacity(0.18))
-                Image(systemName: account.type.iconName)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Color(hex: "#5B8FF9"))
-            }
-            .frame(width: 32, height: 32)
+            IconBadge(systemName: account.type.iconName, color: Theme.Palette.segmentCash, size: .sm)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(account.name)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(Theme.serif(14, weight: .semibold))
                 Text(account.type.displayName)
-                    .font(.system(size: 11))
+                    .font(Theme.serif(11))
                     .foregroundStyle(.tertiary)
             }
             Spacer()
@@ -123,18 +134,18 @@ struct AddPositionSheet: View {
     private var assetCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("资产")
-                .font(.system(size: 11, weight: .bold))
-                .kerning(1.2)
+                .font(Theme.TypeToken.eyebrow())
+                .kerning(Theme.TypeToken.eyebrowKerning)
                 .foregroundStyle(.tertiary)
 
             // 代码行
             HStack(spacing: 10) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("代码")
-                        .font(.system(size: 11))
+                        .font(Theme.serif(11))
                         .foregroundStyle(.tertiary)
                     TextField(codePlaceholder, text: $assetCode)
-                        .font(.system(size: 17, weight: .semibold))
+                        .font(Theme.serif(15))
                         .autocapitalization(.allCharacters)
                         .focused($focusedField, equals: .code)
                 }
@@ -145,10 +156,10 @@ struct AddPositionSheet: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text("名称")
-                    .font(.system(size: 11))
+                    .font(Theme.serif(11))
                     .foregroundStyle(.tertiary)
                 TextField(assetName.isEmpty ? "输入代码后将自动同步" : "", text: $assetName)
-                    .font(.system(size: 15))
+                    .font(Theme.serif(15))
                     .focused($focusedField, equals: .name)
             }
 
@@ -157,11 +168,11 @@ struct AddPositionSheet: View {
             HStack {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(account.type.isGold ? "金价 ¥/克" : "当前价")
-                        .font(.system(size: 11))
+                        .font(Theme.serif(11))
                         .foregroundStyle(.tertiary)
                     TextField("输入代码后将自动同步", text: $lastPriceText)
                         .keyboardType(.decimalPad)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(Theme.serif(15))
                         .monospacedDigit()
                         .focused($focusedField, equals: .price)
                 }
@@ -171,7 +182,7 @@ struct AddPositionSheet: View {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 11))
                         Text("已同步")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(Theme.serif(11, weight: .semibold))
                     }
                     .foregroundStyle(.green)
                 }
@@ -205,9 +216,9 @@ struct AddPositionSheet: View {
                 HStack(spacing: 3) {
                     Image(systemName: "exclamationmark.triangle.fill")
                     Text("重试")
-                        .font(.system(size: 11))
+                        .font(Theme.serif(11))
                 }
-                .foregroundStyle(Color(hex: "#E89B2A"))
+                .foregroundStyle(Theme.Semantic.warning)
             }
         }
     }
@@ -215,35 +226,35 @@ struct AddPositionSheet: View {
     private var positionCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("持仓信息")
-                .font(.system(size: 11, weight: .bold))
-                .kerning(1.2)
+                .font(Theme.TypeToken.eyebrow())
+                .kerning(Theme.TypeToken.eyebrowKerning)
                 .foregroundStyle(.tertiary)
 
             HStack {
                 Text(sharesLabel)
-                    .font(.system(size: 14))
+                    .font(Theme.serif(14))
                 Spacer()
                 TextField(sharesPlaceholder, text: $sharesText)
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.trailing)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(Theme.serif(15))
                     .monospacedDigit()
                     .focused($focusedField, equals: .shares)
             }
             Divider().opacity(0.4)
             HStack {
                 Text("平均成本")
-                    .font(.system(size: 14))
+                    .font(Theme.serif(14))
                 Spacer()
                 TextField("", text: $avgCostText)
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.trailing)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(Theme.serif(15))
                     .monospacedDigit()
                     .focused($focusedField, equals: .avgCost)
             }
             Text("可留空 · 留空将以当前价作为成本(浮盈 = 0)")
-                .font(.system(size: 11))
+                .font(Theme.serif(11))
                 .foregroundStyle(.tertiary)
                 .padding(.top, 2)
         }
@@ -270,7 +281,7 @@ struct AddPositionSheet: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text("预估市值")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(Theme.serif(11, weight: .semibold))
                     .foregroundStyle(.secondary)
                 Text(marketValue > 0 ? formatCNY(marketValue) : "¥ — ")
                     .font(.system(size: 20, weight: .bold))
@@ -283,7 +294,7 @@ struct AddPositionSheet: View {
             if costBasis > 0 {
                 VStack(alignment: .trailing, spacing: 3) {
                     Text("累计盈亏")
-                        .font(.system(size: 11))
+                        .font(Theme.serif(11))
                         .foregroundStyle(.tertiary)
                     Text(CurrencyFormatter.signedCNY(unrealizedPnL))
                         .font(.system(size: 14, weight: .semibold))
@@ -330,6 +341,17 @@ struct AddPositionSheet: View {
         let code = codeInput.uppercased()
         await MainActor.run { status = .loading }
 
+        // 黄金账户:先把名字从代码推断出来填上(即便接下来价格 API 失败,用户也能继续录入)
+        if account.type.isGold {
+            if let inferred = GoldRecognizer.inferGoldName(from: code) {
+                await MainActor.run {
+                    if assetName.trimmingCharacters(in: .whitespaces).isEmpty {
+                        assetName = inferred
+                    }
+                }
+            }
+        }
+
         do {
             let result: PriceQuoteResult
             switch account.type {
@@ -363,31 +385,78 @@ struct AddPositionSheet: View {
             }
             await MainActor.run {
                 lastPriceText = String(format: "%.4f", result.price)
-                if assetName.trimmingCharacters(in: .whitespaces).isEmpty,
-                   let name = result.assetName, !name.isEmpty {
+                // 价格 API 返回了名字 → 优先用 API 名字覆盖之前的推断名(更权威)
+                if let name = result.assetName, !name.isEmpty {
                     assetName = name
                 }
                 status = .success
             }
         } catch {
-            await MainActor.run { status = .failure }
+            // 黄金账户的价格 API 失败 — 但因为前面已经填了推断名,允许用户手输金价继续保存
+            if account.type.isGold,
+               !assetName.trimmingCharacters(in: .whitespaces).isEmpty {
+                await MainActor.run { status = .success }
+            } else {
+                await MainActor.run { status = .failure }
+            }
+        }
+    }
+
+    /// 规范化代码(港股 / 美股自动补后缀)
+    private var normalizedAssetCode: String {
+        let code = assetCode.trimmingCharacters(in: .whitespaces).uppercased()
+        switch account.type {
+        case .brokerHK where !code.hasSuffix(".HK"): return code + ".HK"
+        case .brokerUS where !code.hasSuffix(".US"): return code + ".US"
+        default: return code
         }
     }
 
     private func save() {
-        let lastPrice = Double(lastPriceText) ?? 0
-        let code = assetCode.trimmingCharacters(in: .whitespaces).uppercased()
-        let finalCode: String
-        switch account.type {
-        case .brokerHK where !code.hasSuffix(".HK"):
-            finalCode = code + ".HK"
-        case .brokerUS where !code.hasSuffix(".US"):
-            finalCode = code + ".US"
-        default:
-            finalCode = code
+        let finalCode = normalizedAssetCode
+        // P1:查重 — 同账户同资产已存在 → 弹合并/取消选择,而不是静默创建第二条
+        if let existing = allPositions.first(where: {
+            $0.account?.id == account.id && $0.assetCode == finalCode
+        }) {
+            duplicateExisting = existing
+            return
         }
+        insertNewPosition(code: finalCode)
+    }
+
+    /// 合并到已有持仓:shares 累加,avgCost 按金额加权重算。lastPrice 用输入的覆盖(更新)。
+    private func mergeIntoExisting() {
+        guard let existing = duplicateExisting else { return }
+        let addShares = Double(sharesText) ?? 0
+        let lastPrice = Double(lastPriceText) ?? 0
+        let inputCost = Double(avgCostText) ?? 0
+        let effectiveCost = inputCost > 0 ? inputCost : lastPrice
+
+        let newTotal = existing.shares + addShares
+        if newTotal > 0 {
+            let combinedCost = existing.totalCost + addShares * effectiveCost
+            existing.avgCost = combinedCost / newTotal
+            existing.shares = newTotal
+        }
+        if lastPrice > 0 {
+            existing.lastPrice = lastPrice
+        }
+        existing.updatedAt = Date()
+        do {
+            try context.save()
+            SnapshotService.recordToday(context: context)
+            ToastManager.shared.success("已合并到「\(existing.assetName)」")
+            dismiss()
+        } catch {
+            ToastManager.shared.error("保存失败", subtitle: error.localizedDescription)
+        }
+        duplicateExisting = nil
+    }
+
+    private func insertNewPosition(code finalCode: String) {
+        let lastPrice = Double(lastPriceText) ?? 0
         let cost = (Double(avgCostText) ?? 0)
-        let effectiveCost = cost > 0 ? cost : lastPrice  // 留空时用当前价
+        let effectiveCost = cost > 0 ? cost : lastPrice
         let pos = Position(
             account: account,
             assetCode: finalCode,
@@ -403,6 +472,7 @@ struct AddPositionSheet: View {
         context.insert(pos)
         do {
             try context.save()
+            SnapshotService.recordToday(context: context)
             ToastManager.shared.success("已添加持仓「\(pos.assetName)」")
             dismiss()
         } catch {

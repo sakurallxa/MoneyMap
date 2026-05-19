@@ -6,6 +6,17 @@ enum PriceRefreshService {
     @MainActor
     static func refreshAll(context: ModelContext) async {
         let positions = (try? context.fetch(FetchDescriptor<Position>())) ?? []
+        let accounts = (try? context.fetch(FetchDescriptor<Account>())) ?? []
+
+        // 完全没有持仓 且 没有外币账户(HKD/USD)时,FX/价格接口都无需调用,
+        // 避免新用户进入首页后还要等 1-3s 的 FX 拉取。
+        let hasForeignCurrency = accounts.contains {
+            $0.currency != .cny
+        } || positions.contains { ($0.account?.currency ?? .cny) != .cny }
+        if positions.isEmpty && !hasForeignCurrency {
+            return
+        }
+
         let cal = Calendar.current
         let today = Date()
 

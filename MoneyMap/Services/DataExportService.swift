@@ -73,6 +73,8 @@ struct BackupDCAPlan: Codable {
     let targetAssetCode: String
     let targetAssetName: String
     let amount: Double
+    /// 手续费率(% 单位)— schema v2 新增。v1 的备份恢复时缺该字段会默认 0。
+    let feeRatePercent: Double?
     let frequency: String
     let dayOfWeek: Int?
     let dayOfMonth: Int?
@@ -104,7 +106,10 @@ struct BackupRate: Codable {
 }
 
 enum DataExportService {
-    static let currentSchemaVersion = 1
+    /// schema 版本号:
+    /// - v1:初版
+    /// - v2:DCAPlan 加 feeRatePercent(手续费率 %)
+    static let currentSchemaVersion = 2
 
     static func snapshot(from context: ModelContext) -> BackupSnapshot {
         let accounts = (try? context.fetch(FetchDescriptor<Account>())) ?? []
@@ -155,7 +160,8 @@ enum DataExportService {
                     sourceAccountID: $0.sourceAccountID, sourceAccountName: $0.sourceAccountName,
                     targetAccountID: $0.targetAccountID, targetAccountName: $0.targetAccountName,
                     targetAssetCode: $0.targetAssetCode, targetAssetName: $0.targetAssetName,
-                    amount: $0.amount, frequency: $0.frequencyRaw,
+                    amount: $0.amount, feeRatePercent: $0.feeRatePercent,
+                    frequency: $0.frequencyRaw,
                     dayOfWeek: $0.dayOfWeek, dayOfMonth: $0.dayOfMonth,
                     nextRunDate: $0.nextRunDate, lastRunDate: $0.lastRunDate,
                     isActive: $0.isActive, createdAt: $0.createdAt

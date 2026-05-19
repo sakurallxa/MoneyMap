@@ -25,6 +25,12 @@ struct AssetTrendCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
+            // 金箔 hairline — 与 Hero / Donut 卡形成视觉系列(P0-Composition)
+            Rectangle()
+                .fill(Theme.Bronze.goldHairline)
+                .frame(height: 0.6)
+                .padding(.bottom, 2)
+
             topRow
             RangeTabsView(range: $range, dark: false)
 
@@ -33,7 +39,7 @@ struct AssetTrendCard: View {
                 axisLabelsRow
             } else {
                 Text("数据不足")
-                    .font(.subheadline)
+                    .font(Theme.serif(13))
                     .foregroundStyle(.tertiary)
                     .frame(maxWidth: .infinity, minHeight: 120)
             }
@@ -45,6 +51,10 @@ struct AssetTrendCard: View {
             RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .fill(Color(.secondarySystemGroupedBackground))
         )
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(Theme.Bronze.softBorder, lineWidth: 0.5)
+        )
         .cardElevation()
     }
 
@@ -52,27 +62,34 @@ struct AssetTrendCard: View {
 
     private var topRow: some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Text(hideBalance ? "¥· · · · ·" : "¥\(formatNumber(totalAssetsCNY))")
-                .font(.system(size: 22, weight: .bold))
-                .kerning(-0.5)
-                .monospacedDigit()
-                .foregroundStyle(.primary)
-                .accessibilityLabel(totalAssetsCNY.accessibilityAmountLabel(prefix: "总资产", hidden: hideBalance))
+            MoneyText(
+                value: totalAssetsCNY,
+                scale: .metric,
+                hidden: hideBalance
+            )
+            .accessibilityLabel(totalAssetsCNY.accessibilityAmountLabel(prefix: "总资产", hidden: hideBalance))
 
             Spacer()
 
             HStack(spacing: 4) {
                 Text("今日")
-                    .font(.system(size: 11))
+                    .font(Theme.serif(11))
                     .foregroundStyle(.tertiary)
-                Text(hideBalance ? "¥····" : (todayDelta >= 0 ? "+" : "-") + "¥\(formatNumber(abs(todayDelta)))")
-                    .font(.system(size: 13, weight: .bold))
-                    .monospacedDigit()
-                    .foregroundStyle(Color.pnlColor(todayDelta))
-                Text(hideBalance ? "··%" : String(format: "%+.2f%%", todayPct))
-                    .font(.system(size: 13, weight: .bold))
-                    .monospacedDigit()
-                    .foregroundStyle(Color.pnlColor(todayDelta))
+                MoneyText(
+                    value: todayDelta,
+                    scale: .caption,
+                    signed: true,
+                    hidden: hideBalance,
+                    color: Color.pnlColor(todayDelta),
+                    sizeOverride: 13   // 与右侧 PercentText 13pt 对齐
+                )
+                PercentText(
+                    value: todayPct,
+                    size: 13,
+                    signed: true,
+                    hidden: hideBalance,
+                    color: Color.pnlColor(todayDelta)
+                )
             }
             .accessibilityElement(children: .combine)
             .accessibilityLabel(hideBalance
@@ -120,7 +137,7 @@ struct AssetTrendCard: View {
         return HStack {
             ForEach(Array(labels.enumerated()), id: \.offset) { idx, label in
                 Text(label)
-                    .font(.system(size: 10))
+                    .font(Theme.serif(10))
                     .foregroundStyle(.tertiary)
                 if idx < labels.count - 1 {
                     Spacer()

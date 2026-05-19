@@ -12,15 +12,26 @@ struct AddDCAPlanSheet: View {
     @State private var assetCode = ""
     @State private var assetName = ""
     @State private var amountText = ""
+    @State private var feeText = ""    // 每次手续费(选填,默认 0)
     @State private var frequency: DCAFrequency = .weekly
     @State private var dayOfWeek: Int = 1     // 1=周一
     @State private var dayOfMonth: Int = 1    // 1-28
     @State private var nextRunDate: Date = Date()
     @State private var didInitDate = false
+    @State private var assetFetchTask: Task<Void, Never>?
+    @State private var assetFetchStatus: FetchStatus = .idle
     @FocusState private var focusedField: Field?
 
     private enum Field: Hashable {
-        case name, code, asset, amount
+        case name, code, asset, amount, fee
+    }
+
+    enum FetchStatus: Equatable {
+        case idle
+        case loading
+        case success
+        case failure(String)        // 失败时附原因(网络 / 代码不存在 / 未选目标)
+        case needsTarget            // 未选买入目标
     }
 
     private var sourceAccounts: [Account] {
@@ -66,10 +77,13 @@ struct AddDCAPlanSheet: View {
 
                     section(title: "资产") {
                         codeRow
+                        assetFetchHint
                         Divider().opacity(0.4).padding(.leading, 56)
                         nameRow
                         Divider().opacity(0.4).padding(.leading, 56)
                         amountRow
+                        Divider().opacity(0.4).padding(.leading, 56)
+                        feeRow
                     }
 
                     section(title: "执行频率") {
@@ -86,10 +100,7 @@ struct AddDCAPlanSheet: View {
                         nextRunRow
                     }
 
-                    hintFooter
-                        .padding(.horizontal, 22)
-                        .padding(.top, 6)
-                        .padding(.bottom, 32)
+                    Spacer(minLength: 32)
                 }
             }
             .background(Theme.Palette.pageBgWarm.ignoresSafeArea())
@@ -98,20 +109,17 @@ struct AddDCAPlanSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("取消") { dismiss() }
+                        .foregroundStyle(Theme.Palette.accentDark)
                 }
                 ToolbarItem(placement: .principal) {
-                    VStack(spacing: 1) {
-                        Text("新建定投")
-                            .font(.system(size: 16, weight: .bold))
-                        Text("系统会按日自动执行")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
-                    }
+                    Text("新建定投")
+                        .font(Theme.serif(16, weight: .bold))
+                        .foregroundStyle(Theme.EmptyV2.text1)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("保存") { save() }
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(canSave ? Theme.Palette.accentDark : .secondary)
+                        .font(Theme.serif(15, weight: .bold))
+                        .foregroundStyle(canSave ? Theme.Palette.accentDark : Theme.Palette.accentDark.opacity(0.35))
                         .disabled(!canSave)
                 }
                 ToolbarItemGroup(placement: .keyboard) {
@@ -120,7 +128,7 @@ struct AddDCAPlanSheet: View {
                         focusedField = nil
                     } label: {
                         Text("完成")
-                            .font(.system(size: 15, weight: .bold))
+                            .font(Theme.serif(15, weight: .bold))
                             .foregroundStyle(Theme.Palette.accentDark)
                     }
                 }
@@ -134,6 +142,9 @@ struct AddDCAPlanSheet: View {
             .onChange(of: frequency) { _, _ in recomputeNext() }
             .onChange(of: dayOfWeek) { _, _ in recomputeNext() }
             .onChange(of: dayOfMonth) { _, _ in recomputeNext() }
+            // 自动拉取资产名称(代码 / 目标账户类型 任一变化都重新拉)
+            .onChange(of: assetCode) { _, _ in scheduleAssetFetch() }
+            .onChange(of: targetAccountID) { _, _ in scheduleAssetFetch() }
         }
     }
 
@@ -142,11 +153,11 @@ struct AddDCAPlanSheet: View {
     private var planNameHero: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("计划名称")
-                .font(.system(size: 11, weight: .bold))
+                .font(Theme.serif(11, weight: .bold))
                 .tracking(0.8)
                 .foregroundStyle(.tertiary)
             TextField("如:每周一定投易方达蓝筹", text: $planName)
-                .font(.system(size: 22, weight: .bold))
+                .font(Theme.serif(22, weight: .bold))
                 .textInputAutocapitalization(.never)
                 .focused($focusedField, equals: .name)
         }
@@ -166,7 +177,7 @@ struct AddDCAPlanSheet: View {
     private func section<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
-                .font(.system(size: 11, weight: .bold))
+                .font(Theme.serif(11, weight: .bold))
                 .tracking(1.2)
                 .foregroundStyle(.tertiary)
                 .padding(.leading, 22)
@@ -200,12 +211,14 @@ struct AddDCAPlanSheet: View {
         } label: {
             formRow(
                 iconName: "wallet.pass.fill",
-                iconColor: Color(hex: "#5B8FF9"),
+                iconColor: Theme.Bronze.dark,
                 label: "扣款账户",
                 value: selectedSource?.name ?? "请选择",
                 placeholder: selectedSource == nil
             )
         }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
     }
 
     private var targetAccountRow: some View {
@@ -223,21 +236,23 @@ struct AddDCAPlanSheet: View {
         } label: {
             formRow(
                 iconName: "chart.pie.fill",
-                iconColor: Theme.Palette.accent,
+                iconColor: Theme.Bronze.dark,
                 label: "买入目标",
                 value: selectedTarget?.name ?? "请选择",
                 placeholder: selectedTarget == nil
             )
         }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
     }
 
     // MARK: - 资产
 
     private var codeRow: some View {
         HStack(spacing: 12) {
-            iconBadge(iconName: "sparkles", color: Color(hex: "#F4B860"))
+            iconBadge(iconName: "sparkles", color: Theme.Bronze.dark)
             Text("代码")
-                .font(.system(size: 13))
+                .font(Theme.serif(13))
                 .foregroundStyle(.secondary)
                 .frame(width: 64, alignment: .leading)
             Spacer(minLength: 0)
@@ -248,21 +263,80 @@ struct AddDCAPlanSheet: View {
                 .autocorrectionDisabled()
                 .multilineTextAlignment(.trailing)
                 .focused($focusedField, equals: .code)
+            assetFetchBadge
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
     }
 
+    @ViewBuilder
+    private var assetFetchBadge: some View {
+        switch assetFetchStatus {
+        case .idle: EmptyView()
+        case .loading:
+            ProgressView().scaleEffect(0.7)
+        case .success:
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 14))
+                .foregroundStyle(Theme.Semantic.success)
+        case .failure:
+            Button { scheduleAssetFetch() } label: {
+                HStack(spacing: 3) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 11))
+                    Text("重试")
+                        .font(Theme.serif(11, weight: .semibold))
+                }
+                .foregroundStyle(Theme.Semantic.warning)
+            }
+        case .needsTarget:
+            Image(systemName: "exclamationmark.circle.fill")
+                .font(.system(size: 13))
+                .foregroundStyle(Theme.Semantic.warning)
+        }
+    }
+
+    /// 失败时显示的提示文案(放在 codeRow 下方,让用户知道为什么没填上名字)
+    @ViewBuilder
+    private var assetFetchHint: some View {
+        switch assetFetchStatus {
+        case .failure(let reason):
+            HStack(spacing: 6) {
+                Spacer()
+                Image(systemName: "info.circle")
+                    .font(.system(size: 10))
+                Text("\(reason) · 可手动输入名称")
+                    .font(Theme.serif(11))
+            }
+            .foregroundStyle(Theme.Semantic.warning)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 6)
+        case .needsTarget:
+            HStack(spacing: 6) {
+                Spacer()
+                Image(systemName: "info.circle")
+                    .font(.system(size: 10))
+                Text("请先选择买入目标,再输入代码")
+                    .font(Theme.serif(11))
+            }
+            .foregroundStyle(Theme.Semantic.warning)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 6)
+        default:
+            EmptyView()
+        }
+    }
+
     private var nameRow: some View {
         HStack(spacing: 12) {
-            iconBadge(iconName: "tag.fill", color: Color(hex: "#7B68EE"))
+            iconBadge(iconName: "tag.fill", color: Theme.Bronze.dark)
             Text("资产名称")
-                .font(.system(size: 13))
+                .font(Theme.serif(13))
                 .foregroundStyle(.secondary)
                 .frame(width: 64, alignment: .leading)
             Spacer(minLength: 0)
             TextField("输入代码后将自动同步", text: $assetName)
-                .font(.system(size: 14))
+                .font(Theme.serif(14))
                 .multilineTextAlignment(.trailing)
                 .focused($focusedField, equals: .asset)
         }
@@ -272,9 +346,9 @@ struct AddDCAPlanSheet: View {
 
     private var amountRow: some View {
         HStack(spacing: 12) {
-            iconBadge(iconName: "arrow.down.to.line", color: Color.pnlNegative)
+            iconBadge(iconName: "arrow.down.to.line", color: Theme.Bronze.dark)
             Text("每次扣款")
-                .font(.system(size: 13))
+                .font(Theme.serif(13))
                 .foregroundStyle(.secondary)
                 .frame(width: 64, alignment: .leading)
             Spacer(minLength: 0)
@@ -295,6 +369,50 @@ struct AddDCAPlanSheet: View {
         .padding(.vertical, 12)
     }
 
+    /// 手续费率(% 单位)— 实际 fee = amount × rate / 100,保存时计算成绝对值
+    private var feeRow: some View {
+        let rate = max(0, Double(feeText) ?? 0)
+        let amount = Double(amountText) ?? 0
+        let actual = amount * rate / 100
+        return VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 12) {
+                iconBadge(iconName: "yensign.circle", color: Theme.Bronze.dark)
+                Text("手续费率")
+                    .font(Theme.serif(13))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 64, alignment: .leading)
+                Spacer(minLength: 0)
+                // 扩大点击热区:整个 trailing 区域都可以唤起键盘,fee 字段绑定 focus 以便键盘 toolbar 的"完成"按钮生效
+                HStack(spacing: 1) {
+                    TextField("0", text: $feeText)
+                        .font(.system(size: 15, weight: .semibold))
+                        .monospacedDigit()
+                        .keyboardType(.decimalPad)
+                        .multilineTextAlignment(.trailing)
+                        .focused($focusedField, equals: .fee)
+                        .frame(minWidth: 80)
+                    Text("%")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.secondary)
+                }
+                .contentShape(Rectangle())
+                .onTapGesture { focusedField = .fee }
+            }
+            if rate > 0 && amount > 0 {
+                HStack {
+                    Spacer()
+                    Text("约 ¥\(String(format: "%.2f", actual))/次")
+                        .font(Theme.serif(11))
+                        .foregroundStyle(.tertiary)
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .contentShape(Rectangle())
+        .onTapGesture { focusedField = .fee }
+    }
+
     // MARK: - 执行频率
 
     private var frequencySegmented: some View {
@@ -304,14 +422,14 @@ struct AddDCAPlanSheet: View {
                     frequency = f
                 } label: {
                     Text(f.displayName)
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(Theme.serif(12, weight: .semibold))
                         .foregroundStyle(frequency == f ? .white : .primary)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)
                         .background(
                             RoundedRectangle(cornerRadius: 10, style: .continuous)
                                 .fill(frequency == f
-                                      ? Color.primary.opacity(0.92)
+                                      ? Theme.Palette.accent
                                       : Color.black.opacity(0.045))
                         )
                 }
@@ -325,7 +443,7 @@ struct AddDCAPlanSheet: View {
     private var weekdayChips: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("星期几扣款")
-                .font(.system(size: 12))
+                .font(Theme.serif(12))
                 .foregroundStyle(.secondary)
             HStack(spacing: 4) {
                 ForEach(1...7, id: \.self) { d in
@@ -333,7 +451,7 @@ struct AddDCAPlanSheet: View {
                         dayOfWeek = d
                     } label: {
                         Text("周" + WeekdayPicker.labels[d - 1])
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(Theme.serif(13, weight: .semibold))
                             .foregroundStyle(dayOfWeek == d ? .white : .primary)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 8)
@@ -353,7 +471,7 @@ struct AddDCAPlanSheet: View {
     private var monthDayPicker: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("每月几号扣款")
-                .font(.system(size: 12))
+                .font(Theme.serif(12))
                 .foregroundStyle(.secondary)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 6) {
@@ -383,32 +501,33 @@ struct AddDCAPlanSheet: View {
 
     private var nextRunRow: some View {
         HStack(spacing: 12) {
-            iconBadge(iconName: "calendar", color: Color(hex: "#3478F6"))
+            iconBadge(iconName: "calendar", color: Theme.Bronze.dark)
             Text("下次扣款日")
-                .font(.system(size: 13))
+                .font(Theme.serif(13))
                 .foregroundStyle(.secondary)
                 .frame(width: 78, alignment: .leading)
             Spacer(minLength: 0)
-            DatePicker(
-                "",
-                selection: $nextRunDate,
-                displayedComponents: .date
-            )
-            .labelsHidden()
+            // 只读展示 — 由频率 + 星期/几号自动算出,不允许手动改
+            Text(formattedNextRunDate)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.primary)
+                .monospacedDigit()
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .fill(Color.black.opacity(0.05))
+                )
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
     }
 
-    // MARK: - hint
-
-    private var hintFooter: some View {
-        Text("创建后,系统会在每个扣款日自动从扣款账户扣款 + 生成「在途」交易 · T+2 后自动按确认净值入仓 · 不再需要手动确认。")
-            .font(.system(size: 11))
-            .foregroundStyle(.tertiary)
-            .lineSpacing(2)
-            .multilineTextAlignment(.leading)
-            .frame(maxWidth: .infinity, alignment: .leading)
+    private var formattedNextRunDate: String {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "zh_CN")
+        f.dateFormat = "yyyy年M月d日"
+        return f.string(from: nextRunDate)
     }
 
     // MARK: - shared row
@@ -417,12 +536,12 @@ struct AddDCAPlanSheet: View {
         HStack(spacing: 12) {
             iconBadge(iconName: iconName, color: iconColor)
             Text(label)
-                .font(.system(size: 13))
+                .font(Theme.serif(13))
                 .foregroundStyle(.secondary)
                 .frame(width: 64, alignment: .leading)
             Spacer(minLength: 0)
             Text(value)
-                .font(.system(size: 14, weight: placeholder ? .regular : .semibold))
+                .font(Theme.serif(14, weight: placeholder ? .regular : .semibold))
                 .foregroundStyle(placeholder ? .tertiary : .primary)
                 .lineLimit(1)
             Image(systemName: "chevron.right")
@@ -435,14 +554,7 @@ struct AddDCAPlanSheet: View {
     }
 
     private func iconBadge(iconName: String, color: Color) -> some View {
-        Image(systemName: iconName)
-            .font(.system(size: 13, weight: .bold))
-            .foregroundStyle(color)
-            .frame(width: 30, height: 30)
-            .background(
-                RoundedRectangle(cornerRadius: 9, style: .continuous)
-                    .fill(color.opacity(0.14))
-            )
+        IconBadge(systemName: iconName, color: color, size: .sm)
     }
 
     // MARK: - logic
@@ -453,6 +565,59 @@ struct AddDCAPlanSheet: View {
             dayOfWeek: dayOfWeek,
             dayOfMonth: dayOfMonth
         )
+    }
+
+    /// 输入资产代码后,带 700ms 防抖去拉取资产名称。
+    /// 用户未选买入目标时,显式提示;否则按 target.type 派发 API。
+    private func scheduleAssetFetch() {
+        assetFetchTask?.cancel()
+        let raw = assetCode.trimmingCharacters(in: .whitespaces)
+        guard !raw.isEmpty else {
+            assetFetchStatus = .idle
+            return
+        }
+        guard raw.count >= 2 else {
+            assetFetchStatus = .idle
+            return
+        }
+        // 没选买入目标 → 显式提示
+        guard selectedTarget != nil else {
+            assetFetchStatus = .needsTarget
+            return
+        }
+        assetFetchTask = Task {
+            try? await Task.sleep(nanoseconds: 700_000_000)
+            if Task.isCancelled { return }
+            await fetchAssetName(for: raw)
+        }
+    }
+
+    private func fetchAssetName(for codeInput: String) async {
+        guard let target = selectedTarget else {
+            await MainActor.run { assetFetchStatus = .needsTarget }
+            return
+        }
+        let code = codeInput.uppercased()
+        await MainActor.run { assetFetchStatus = .loading }
+
+        do {
+            // 统一走 QuoteResolver,自带智能容错(letter 代码 → US;5 位数字 → HK)
+            let result = try await QuoteResolver.quote(code: code, accountType: target.type)
+            await MainActor.run {
+                if let name = result.assetName, !name.isEmpty {
+                    if assetName.trimmingCharacters(in: .whitespaces).isEmpty {
+                        assetName = name
+                    }
+                    assetFetchStatus = .success
+                } else {
+                    assetFetchStatus = .failure("未找到代码「\(code)」")
+                }
+            }
+        } catch {
+            await MainActor.run {
+                assetFetchStatus = .failure("拉取失败 · 点重试")
+            }
+        }
     }
 
     private func save() {
@@ -471,6 +636,7 @@ struct AddDCAPlanSheet: View {
             targetAssetCode: assetCode.trimmingCharacters(in: .whitespaces).uppercased(),
             targetAssetName: assetName.trimmingCharacters(in: .whitespaces),
             amount: Double(amountText) ?? 0,
+            feeRatePercent: max(0, Double(feeText) ?? 0),
             frequency: frequency,
             nextRunDate: nextRunDate,
             dayOfWeek: dayOfWeek,

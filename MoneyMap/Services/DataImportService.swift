@@ -93,7 +93,9 @@ enum DataImportService {
                 sourceAccountID: plan.sourceAccountID, sourceAccountName: plan.sourceAccountName,
                 targetAccountID: plan.targetAccountID, targetAccountName: plan.targetAccountName,
                 targetAssetCode: plan.targetAssetCode, targetAssetName: plan.targetAssetName,
-                amount: plan.amount, frequency: DCAFrequency(rawValue: plan.frequency) ?? .weekly,
+                amount: plan.amount,
+                feeRatePercent: plan.feeRatePercent ?? 0,    // v1 备份缺该字段 → 默认 0%
+                frequency: DCAFrequency(rawValue: plan.frequency) ?? .weekly,
                 nextRunDate: plan.nextRunDate,
                 dayOfWeek: plan.dayOfWeek ?? 1,
                 dayOfMonth: plan.dayOfMonth ?? 1,
@@ -127,5 +129,7 @@ enum DataImportService {
         }
 
         try? context.save()
+        // 导入后触发当天 snapshot,避免趋势图割裂
+        SnapshotService.recordToday(context: context)
     }
 }

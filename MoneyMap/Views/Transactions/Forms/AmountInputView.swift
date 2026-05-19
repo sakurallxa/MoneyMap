@@ -27,7 +27,7 @@ struct AmountInputView: View {
     var body: some View {
         VStack(spacing: 8) {
             Text("金额")
-                .font(.system(size: 11, weight: .semibold))
+                .font(Theme.serif(11, weight: .semibold))
                 .kerning(1.5)
                 .foregroundStyle(.tertiary)
 

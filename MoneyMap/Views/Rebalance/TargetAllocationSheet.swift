@@ -44,9 +44,9 @@ struct TargetAllocationSheet: View {
                 ToolbarItem(placement: .principal) {
                     VStack(spacing: 0) {
                         Text("目标配置")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(Theme.serif(15, weight: .semibold))
                         Text("每类资产的目标占比")
-                            .font(.system(size: 10))
+                            .font(Theme.serif(10))
                             .foregroundStyle(.tertiary)
                     }
                 }
@@ -109,9 +109,9 @@ struct TargetAllocationSheet: View {
                 }
 
                 Text(m.displayName + "型")
-                    .font(.system(size: 14, weight: .bold))
+                    .font(Theme.serif(14, weight: .bold))
                 Text(m.tagline)
-                    .font(.system(size: 10))
+                    .font(Theme.serif(10))
                     .foregroundStyle(.secondary)
                     .lineLimit(3)
                     .multilineTextAlignment(.leading)
@@ -148,12 +148,12 @@ struct TargetAllocationSheet: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text(selectedModel.displayName + "型 · 预览")
-                    .font(.system(size: 13, weight: .bold))
+                    .font(Theme.serif(13, weight: .bold))
                 Spacer()
                 validityBadge
             }
             Text(selectedModel.tagline)
-                .font(.system(size: 11))
+                .font(Theme.serif(11))
                 .foregroundStyle(.secondary)
 
             // stacked bar
@@ -179,7 +179,7 @@ struct TargetAllocationSheet: View {
                             .fill(Color(hex: cls.hexColor))
                             .frame(width: 6, height: 6)
                         Text("\(cls.displayName) \(Int(percents[cls] ?? 0))%")
-                            .font(.system(size: 10, weight: .semibold))
+                            .font(Theme.serif(10, weight: .semibold))
                             .monospacedDigit()
                     }
                 }
@@ -191,7 +191,7 @@ struct TargetAllocationSheet: View {
                             .fill(Color(hex: cls.hexColor))
                             .frame(width: 6, height: 6)
                         Text("\(cls.displayName) \(Int(percents[cls] ?? 0))%")
-                            .font(.system(size: 10, weight: .semibold))
+                            .font(Theme.serif(10, weight: .semibold))
                             .monospacedDigit()
                     }
                 }
@@ -212,7 +212,7 @@ struct TargetAllocationSheet: View {
             Image(systemName: isValid ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
                 .font(.system(size: 10, weight: .bold))
             Text(isValid ? "总和 100%" : String(format: "当前 %.0f%%", total))
-                .font(.system(size: 11, weight: .bold))
+                .font(Theme.serif(11, weight: .bold))
                 .monospacedDigit()
         }
         .foregroundStyle(.white)
@@ -247,7 +247,7 @@ struct TargetAllocationSheet: View {
                 .fill(Color(hex: cls.hexColor))
                 .frame(width: 10, height: 10)
             Text(cls.displayName)
-                .font(.system(size: 14, weight: .semibold))
+                .font(Theme.serif(14, weight: .semibold))
                 .frame(width: 50, alignment: .leading)
                 .foregroundStyle(editable ? .primary : .secondary)
             Slider(
@@ -282,7 +282,7 @@ struct TargetAllocationSheet: View {
                 save()
             } label: {
                 Text("保存")
-                    .font(.system(size: 17, weight: .bold))
+                    .font(Theme.serif(17, weight: .bold))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)

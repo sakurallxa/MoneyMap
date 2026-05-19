@@ -35,26 +35,35 @@ enum TransactionFormType: Hashable {
         }
     }
 
+    /// P1-012:三族图标 — 持仓变动用对角箭头,现金流用垂直箭头,现金事件用专属符号
     var icon: String {
         switch self {
+        // 持仓变动 · 对角箭头族
         case .buyExisting: return "arrow.down.left"
-        case .buyNew: return "plus"
-        case .sell: return "arrow.up.right"
-        case .dividend: return "gift.fill"
-        case .deposit: return "arrow.down"
-        case .withdraw: return "arrow.up"
-        case .transfer: return "arrow.left.arrow.right"
+        case .buyNew:      return "plus.square.fill"   // 首次建仓:用 + 表示新建,与加仓的纯箭头区分
+        case .sell:        return "arrow.up.right"
+        // 现金流 · 垂直箭头族
+        case .deposit:     return "arrow.down.to.line"
+        case .withdraw:    return "arrow.up.to.line"
+        // 现金事件 · 专属符号
+        case .dividend:    return "gift.fill"
+        case .transfer:    return "arrow.left.arrow.right"
         }
     }
 
+    /// 颜色按"钱/持仓方向"统一,与 TransactionRow 保持一致
     var color: Color {
         switch self {
-        case .buyExisting, .buyNew: return .pnlPositive
-        case .sell: return .pnlNegative
-        case .dividend: return Color(hex: "#E0A82E")
-        case .deposit: return .pnlNegative
-        case .withdraw: return Color(hex: "#8E8E93")
-        case .transfer: return Color(hex: "#7B68EE")
+        // 持仓增加 — 红
+        case .buyExisting, .buyNew: return Theme.Palette.pnlUp
+        // 持仓减少 — 绿
+        case .sell: return Theme.Palette.pnlDown
+        // 现金增加 — 红
+        case .deposit, .dividend: return Theme.Palette.pnlUp
+        // 现金减少 — 绿
+        case .withdraw: return Theme.Palette.pnlDown
+        // 中性 — 铜
+        case .transfer: return Theme.Bronze.dark
         }
     }
 
@@ -80,12 +89,8 @@ struct TransactionTypePickerView: View {
         NavigationStack(path: $pickerNav) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
-                    Text("记一笔")
-                        .font(.system(size: 30, weight: .bold))
-                        .padding(.horizontal, 20)
-                        .padding(.top, 4)
-
                     primaryGrid
+                        .padding(.top, 20)
                     flowList
 
                     Spacer(minLength: 30)
@@ -93,20 +98,21 @@ struct TransactionTypePickerView: View {
             }
             .background(Theme.Palette.pageBgWarm.ignoresSafeArea())
             .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        dismiss()
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundStyle(.secondary)
-                    }
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("取消") { dismiss() }
+                        .foregroundStyle(Theme.Palette.accentDark)
                 }
                 ToolbarItem(placement: .principal) {
-                    Text(todayLabel)
-                        .font(.system(size: 13))
-                        .foregroundStyle(.secondary)
+                    VStack(spacing: 1) {
+                        Text("记一笔")
+                            .font(Theme.serif(16, weight: .bold))
+                            .foregroundStyle(Theme.EmptyV2.text1)
+                        Text(todayLabel)
+                            .font(Theme.serif(11))
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
             .navigationDestination(for: TransactionFormType.self) { type in
@@ -116,6 +122,8 @@ struct TransactionTypePickerView: View {
             }
         }
         .overlay(ToastOverlayView())
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
     }
 
     private var todayLabel: String {
@@ -170,10 +178,10 @@ struct TransactionTypePickerView: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(type.title)
-                        .font(.system(size: 16, weight: .bold))
+                        .font(Theme.serif(16, weight: .bold))
                         .foregroundStyle(.primary)
                     Text(type.subtitle)
-                        .font(.system(size: 11))
+                        .font(Theme.serif(11))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
@@ -195,7 +203,7 @@ struct TransactionTypePickerView: View {
         let flow: [TransactionFormType] = [.deposit, .withdraw, .transfer]
         return VStack(alignment: .leading, spacing: 8) {
             Text("资金流动")
-                .font(.system(size: 12, weight: .semibold))
+                .font(Theme.serif(12, weight: .semibold))
                 .kerning(1)
                 .foregroundStyle(.tertiary)
                 .padding(.leading, 24)
@@ -235,10 +243,10 @@ struct TransactionTypePickerView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(type.title)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(Theme.serif(15, weight: .semibold))
                     .foregroundStyle(.primary)
                 Text(type.subtitle)
-                    .font(.system(size: 11))
+                    .font(Theme.serif(11))
                     .foregroundStyle(.secondary)
             }
 

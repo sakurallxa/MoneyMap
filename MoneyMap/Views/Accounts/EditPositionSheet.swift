@@ -42,7 +42,7 @@ struct EditPositionSheet: View {
                             Image(systemName: "clock.badge.exclamationmark")
                                 .foregroundStyle(.orange)
                             Text("上次更新 \(daysSinceUpdate) 天前 · 建议核对最新价")
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(Theme.serif(13, weight: .semibold))
                                 .foregroundStyle(.orange)
                         }
                     }
@@ -135,6 +135,7 @@ struct EditPositionSheet: View {
         position.updatedAt = Date()
         do {
             try context.save()
+            SnapshotService.recordToday(context: context)
             ToastManager.shared.success("已保存持仓")
             dismiss()
         } catch {

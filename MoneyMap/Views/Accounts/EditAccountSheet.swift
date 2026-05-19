@@ -80,6 +80,7 @@ struct EditAccountSheet: View {
         account.updatedAt = Date()
         do {
             try context.save()
+            SnapshotService.recordToday(context: context)
             ToastManager.shared.success("已保存账户")
             dismiss()
         } catch {

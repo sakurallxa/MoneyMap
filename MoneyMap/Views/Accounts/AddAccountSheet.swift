@@ -34,12 +34,18 @@ struct AddAccountSheet: View {
             .background(Theme.Palette.pageBgWarm.ignoresSafeArea())
             .navigationTitle("添加账户")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(Theme.Palette.pageBgWarm, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("取消") { dismiss() }
+                        .foregroundStyle(Theme.Palette.accentDark)
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("保存") { save() }.disabled(!canSave)
+                    Button("保存") { save() }
+                        .font(Theme.serif(15, weight: .bold))
+                        .foregroundStyle(canSave ? Theme.Palette.accentDark : Theme.Palette.warmIconDisabled)
+                        .disabled(!canSave)
                 }
             }
             .onAppear {
@@ -53,11 +59,11 @@ struct AddAccountSheet: View {
     private var nameHero: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("账户名称")
-                .font(.system(size: 11, weight: .semibold))
-                .kerning(1.2)
+                .font(Theme.TypeToken.eyebrow())
+                .kerning(Theme.TypeToken.eyebrowKerning)
                 .foregroundStyle(.tertiary)
             TextField("如:招商银行卡 / 支付宝基金", text: $name)
-                .font(.system(size: 22, weight: .bold))
+                .font(Theme.serif(22, weight: .bold))
                 .focused($isNameFocused)
                 .submitLabel(.done)
         }
@@ -74,8 +80,8 @@ struct AddAccountSheet: View {
     private var typeGrid: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("账户类型")
-                .font(.system(size: 11, weight: .bold))
-                .kerning(1.2)
+                .font(Theme.TypeToken.eyebrow())
+                .kerning(Theme.TypeToken.eyebrowKerning)
                 .foregroundStyle(.tertiary)
                 .padding(.horizontal, 8)
 
@@ -110,7 +116,7 @@ struct AddAccountSheet: View {
                 }
                 .frame(width: 36, height: 36)
                 Text(t.displayName)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(Theme.serif(11, weight: .semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
@@ -135,13 +141,13 @@ struct AddAccountSheet: View {
     private var basicCard: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("基础信息")
-                .font(.system(size: 11, weight: .bold))
-                .kerning(1.2)
+                .font(Theme.TypeToken.eyebrow())
+                .kerning(Theme.TypeToken.eyebrowKerning)
                 .foregroundStyle(.tertiary)
 
             HStack {
                 Text("币种")
-                    .font(.system(size: 14))
+                    .font(Theme.serif(14))
                 Spacer()
                 Picker("币种", selection: $currency) {
                     ForEach(CurrencyCode.allCases, id: \.self) { c in
@@ -158,7 +164,7 @@ struct AddAccountSheet: View {
 
                 HStack {
                     Text("初始余额")
-                        .font(.system(size: 14))
+                        .font(Theme.serif(14))
                     Spacer()
                     HStack(spacing: 1) {
                         Text(currency.symbol)
@@ -184,12 +190,12 @@ struct AddAccountSheet: View {
     private var noteCard: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("备注(可选)")
-                .font(.system(size: 11, weight: .bold))
-                .kerning(1.2)
+                .font(Theme.TypeToken.eyebrow())
+                .kerning(Theme.TypeToken.eyebrowKerning)
                 .foregroundStyle(.tertiary)
             TextField("用途说明 · 如「工资卡 / 定投扣款源」", text: $note, axis: .vertical)
                 .lineLimit(2...4)
-                .font(.system(size: 14))
+                .font(Theme.serif(14))
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 14)
@@ -203,14 +209,14 @@ struct AddAccountSheet: View {
 
     private func typeColor(_ t: AccountType) -> Color {
         switch t {
-        case .cash: return Color(hex: "#5B8FF9")
-        case .moneyFund: return Color(hex: "#7B68EE")
-        case .fundApp: return Color(hex: "#F4B860")
-        case .brokerA: return Color(hex: "#E63946")
-        case .brokerHK: return Color(hex: "#2A9D8F")
-        case .brokerUS: return Color(hex: "#1ABC9C")
-        case .brokerHKUS: return Color(hex: "#2A9D8F")
-        case .goldDeposit, .goldPhysical: return Color(hex: "#D4AF37")
+        case .cash: return Theme.Palette.segmentCash
+        case .moneyFund: return Theme.Palette.segmentMoneyFund
+        case .fundApp: return Theme.Palette.segmentFund
+        case .brokerA: return Theme.Palette.segmentStockA
+        case .brokerHK: return Theme.Palette.segmentStockHK
+        case .brokerUS: return Theme.Palette.segmentStockUS
+        case .brokerHKUS: return Theme.Palette.segmentStockHK
+        case .goldDeposit, .goldPhysical: return Theme.Palette.segmentGold
         }
     }
 
@@ -227,6 +233,7 @@ struct AddAccountSheet: View {
         context.insert(acc)
         do {
             try context.save()
+            SnapshotService.recordToday(context: context)
             ToastManager.shared.success("已添加账户「\(acc.name)」")
             dismiss()
         } catch {
