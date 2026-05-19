@@ -395,21 +395,31 @@ enum PriceService {
     /// 备源:Yahoo `GC=F`(NYMEX 期货 USD/oz)换算
     static func fetchGoldSpotCNYPerGram() async throws -> PriceQuoteResult {
         // 优先用 SGE 实时现货
-        if let sge = try? await fetchSGEAu9999() {
+        do {
+            let sge = try await fetchSGEAu9999()
+            debugLog("[Gold] ✓ SGE main source OK: \(sge.price) CNY/g, name=\(sge.assetName ?? "?")")
             return sge
+        } catch {
+            debugLog("[Gold] ✗ SGE main source FAILED: \(error). Falling back to Yahoo GC=F.")
         }
         // 备用:Yahoo 黄金期货换算
-        async let goldUSDPerOz = fetchUSStock(symbol: "GC=F")
-        async let usdToCNY = fetchFXRate(from: .usd, to: .cny)
-        let oz = try await goldUSDPerOz
-        let rate = (try? await usdToCNY) ?? 7.18
-        let perGramCNYCurrent = oz.price / 31.1035 * rate
-        let perGramCNYPrev = oz.prevClose / 31.1035 * rate
-        return PriceQuoteResult(
-            price: perGramCNYCurrent,
-            prevClose: perGramCNYPrev,
-            assetName: "黄金现货(国际折算)"
-        )
+        do {
+            async let goldUSDPerOz = fetchUSStock(symbol: "GC=F")
+            async let usdToCNY = fetchFXRate(from: .usd, to: .cny)
+            let oz = try await goldUSDPerOz
+            let rate = (try? await usdToCNY) ?? 7.18
+            let perGramCNYCurrent = oz.price / 31.1035 * rate
+            let perGramCNYPrev = oz.prevClose / 31.1035 * rate
+            debugLog("[Gold] ✓ Yahoo fallback OK: oz=\(oz.price) USD, rate=\(rate), → \(perGramCNYCurrent) CNY/g")
+            return PriceQuoteResult(
+                price: perGramCNYCurrent,
+                prevClose: perGramCNYPrev,
+                assetName: "黄金现货(国际折算)"
+            )
+        } catch {
+            debugLog("[Gold] ✗ Yahoo fallback FAILED: \(error). All sources exhausted.")
+            throw error
+        }
     }
 
     /// 拉取上海黄金交易所 Au99.99 现货价 — 通过东方财富 push2 接口。
@@ -417,12 +427,18 @@ enum PriceService {
     /// 返回字段: f43=最新价(×10^f59), f60=昨收, f59=小数位
     static func fetchSGEAu9999() async throws -> PriceQuoteResult {
         let candidates = ["47.Au99_99", "8.Au99_99", "118.Au99_99"]
+        var lastError: Error?
         for secid in candidates {
-            if let result = try? await fetchEastmoneyQuote(secid: secid, fallbackName: "黄金 Au99.99") {
+            do {
+                let result = try await fetchEastmoneyQuote(secid: secid, fallbackName: "黄金 Au99.99")
+                debugLog("[Gold/SGE] ✓ secid=\(secid) hit")
                 return result
+            } catch {
+                lastError = error
+                debugLog("[Gold/SGE] ✗ secid=\(secid) miss: \(error)")
             }
         }
-        throw PriceServiceError.parseFailed
+        throw lastError ?? PriceServiceError.parseFailed
     }
 
     private static func fetchEastmoneyQuote(secid: String, fallbackName: String) async throws -> PriceQuoteResult {
@@ -434,11 +450,30 @@ enum PriceService {
         var req = URLRequest(url: url)
         req.setValue("Mozilla/5.0", forHTTPHeaderField: "User-Agent")
         req.setValue("https://quote.eastmoney.com/", forHTTPHeaderField: "Referer")
-        let (data, _) = try await session.data(for: req)
+        let (data, response): (Data, URLResponse)
+        do {
+            (data, response) = try await session.data(for: req)
+        } catch {
+            debugLog("[Gold/EM] secid=\(secid) network error: \(error)")
+            throw error
+        }
+        if let http = response as? HTTPURLResponse, http.statusCode != 200 {
+            debugLog("[Gold/EM] secid=\(secid) HTTP \(http.statusCode) ≠ 200, body=\(String(data: data.prefix(200), encoding: .utf8) ?? "<binary>")")
+            throw PriceServiceError.invalidResponse
+        }
 
-        guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let info = root["data"] as? [String: Any]
-        else { throw PriceServiceError.parseFailed }
+        guard let json = try? JSONSerialization.jsonObject(with: data) else {
+            debugLog("[Gold/EM] secid=\(secid) JSON parse fail; raw=\(String(data: data.prefix(200), encoding: .utf8) ?? "<binary>")")
+            throw PriceServiceError.parseFailed
+        }
+        guard let root = json as? [String: Any] else {
+            debugLog("[Gold/EM] secid=\(secid) JSON root not dict: \(type(of: json))")
+            throw PriceServiceError.parseFailed
+        }
+        guard let info = root["data"] as? [String: Any] else {
+            debugLog("[Gold/EM] secid=\(secid) no `data` key; root keys=\(Array(root.keys))")
+            throw PriceServiceError.parseFailed
+        }
 
         func num(_ key: String) -> Double? {
             if let v = info[key] as? Double { return v }
@@ -449,12 +484,14 @@ enum PriceService {
 
         let scale = (info["f59"] as? Int).map { pow(10.0, Double($0)) } ?? 100
         guard let priceRaw = num("f43"), priceRaw > 0 else {
+            debugLog("[Gold/EM] secid=\(secid) bad f43; data keys=\(Array(info.keys)), f43=\(String(describing: info["f43"]))")
             throw PriceServiceError.parseFailed
         }
         let prevRaw = num("f60") ?? priceRaw
         let price = priceRaw / scale
         let prev = prevRaw / scale
         let name = (info["f58"] as? String) ?? fallbackName
+        debugLog("[Gold/EM] secid=\(secid) raw=\(priceRaw) scale=\(scale) → price=\(price) prev=\(prev) name=\(name)")
         return PriceQuoteResult(price: price, prevClose: prev, assetName: name)
     }
 
