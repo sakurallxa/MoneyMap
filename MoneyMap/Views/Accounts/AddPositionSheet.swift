@@ -170,7 +170,10 @@ struct AddPositionSheet: View {
                     Text(account.type.isGold ? "金价 ¥/克" : "当前价")
                         .font(Theme.serif(11))
                         .foregroundStyle(.tertiary)
-                    TextField("输入代码后将自动同步", text: $lastPriceText)
+                    TextField(
+                        status == .failure ? "同步失败,可手动输入" : "输入代码后将自动同步",
+                        text: $lastPriceText
+                    )
                         .keyboardType(.decimalPad)
                         .font(Theme.serif(15))
                         .monospacedDigit()
@@ -392,13 +395,12 @@ struct AddPositionSheet: View {
                 status = .success
             }
         } catch {
-            // 黄金账户的价格 API 失败 — 但因为前面已经填了推断名,允许用户手输金价继续保存
-            if account.type.isGold,
-               !assetName.trimmingCharacters(in: .whitespaces).isEmpty {
-                await MainActor.run { status = .success }
-            } else {
-                await MainActor.run { status = .failure }
-            }
+            // 价格 API 失败一律标 .failure(右上角"重试"按钮)。
+            // 黄金账户已经在前面填好了推断名,所以即便价格没拉到,
+            // canSave 仍然可达,用户可以手输金价继续保存。
+            // 这里以前误把"名字填上了"当作"已同步",会让用户看到
+            // "已同步"但金价 placeholder 仍在 — UI 说谎。
+            await MainActor.run { status = .failure }
         }
     }
 
