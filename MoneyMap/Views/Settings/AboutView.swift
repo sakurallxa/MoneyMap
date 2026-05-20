@@ -76,9 +76,9 @@ struct AboutView: View {
     private var privacyCard: some View {
         sectionCard(title: "数据与隐私") {
             VStack(alignment: .leading, spacing: 10) {
-                paragraph("所有资产数据存储在你自己的设备本地,不会上传任何服务器。")
+                paragraph("资产数据存储在你设备本地,不上传任何服务器。")
                 paragraph("行情拉取只发送资产代码到公开行情源(新浪/雅虎/天天/蛋卷/上海黄金交易所),不携带任何账户信息。")
-                paragraph("钱袋没有后端服务器,没有用户账号体系,不收集设备标识、不做行为追踪。")
+                paragraph("钱袋没有后端,没有账号体系,不收集设备标识、不做行为追踪。")
             }
         }
     }
@@ -124,28 +124,11 @@ struct AboutView: View {
     }
 
     private func paragraph(_ text: String) -> some View {
-        Text(attributedParagraph(text))
+        Text(text)
+            .font(Theme.serif(13))
+            .foregroundStyle(.secondary)
+            .lineSpacing(4)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .fixedSize(horizontal: false, vertical: true)
-    }
-
-    /// iOS 默认 lineBreakStrategy = .pushOut — 中文场景下会主动把行尾词组挤到
-    /// 下一行(怕拆词),导致 "本地,不会上传 | 任何服务器" 这种行尾留空。
-    /// 这里用 NSAttributedString 把 strategy 设为空集合 [],强制紧密填充每一行,
-    /// 字体 / 行距 / 颜色一并在 attribute 里指定,避免与 SwiftUI 修饰器冲突。
-    private func attributedParagraph(_ text: String) -> AttributedString {
-        let style = NSMutableParagraphStyle()
-        style.lineBreakStrategy = []
-        style.lineSpacing = 4
-        let nsAttr = NSAttributedString(
-            string: text,
-            attributes: [
-                .paragraphStyle: style,
-                .font: Theme.uiSerif(size: 13),
-                .foregroundColor: UIColor.secondaryLabel
-            ]
-        )
-        return AttributedString(nsAttr)
     }
 }
 
