@@ -8,10 +8,14 @@ struct AmountInputView: View {
     @State private var cursorOn = true
     @FocusState private var isFocused: Bool
 
+    /// 按中国财经惯例(红涨绿跌)给大金额数字上色:
+    /// - 钱进来(.in / 卖出 / 分红 / 入金) → 红 = 资产增加
+    /// - 钱出去(.out / 买入 / 出金)        → 绿 = 资产减少
+    /// - 中性(.neutral / 转账内部流转)     → 主色,无情绪
     private var color: Color {
         switch type.moneyDirection {
-        case .out: return .pnlPositive
-        case .in: return .pnlNegative
+        case .out: return .pnlNegative
+        case .in: return .pnlPositive
         case .neutral: return .primary
         }
     }

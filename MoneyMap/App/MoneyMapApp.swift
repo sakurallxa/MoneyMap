@@ -238,6 +238,10 @@ struct MoneyMapApp: App {
         UINavigationBar.appearance().scrollEdgeAppearance = navAppearance
         UINavigationBar.appearance().compactAppearance = navAppearance
         UINavigationBar.appearance().tintColor = bronze
+        // iOS 26 把 NavBar back button chevron 渲染交给 UIBarButtonItem,
+        // 仅设 UINavigationBar.tintColor 不够 — 必须显式给 BarButtonItem 一份 tint,
+        // 否则 < 仍是系统默认深色(用户报"主色调没生效")。
+        UIBarButtonItem.appearance().tintColor = bronze
 
         // TabBar — 选中铜深、未选浅棕灰(中文衬线 fallback)
         let tabFont = Theme.uiSerif(size: 10, bold: false)
