@@ -45,7 +45,11 @@ struct MoneyMapApp: App {
 
         // 默认走本地容器(冷启动 < 100ms),只有用户在「设置 · iCloud 同步」打开后才尝试 CloudKit,
         // 避免每次冷启都做一次 iCloud 握手(可能耗时 1-3s,首次启动表现为长时间白屏)。
-        let iCloudEnabled = UserDefaults.standard.bool(forKey: "iCloudSyncEnabled")
+        //
+        // v1.0:iCloud 同步入口在 SettingsView 已隐藏,这里强制 false,
+        // 防止旧 build UserDefaults 残留 true 导致 CloudKit 初始化崩溃(没加 capability)。
+        // v1.1 加完 CloudKit capability + 模型内联默认值后,改回 UserDefaults 读取即可。
+        let iCloudEnabled = false  // UserDefaults.standard.bool(forKey: "iCloudSyncEnabled")
         let resolved: ModelContainer
         if iCloudEnabled {
             do {

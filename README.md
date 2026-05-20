@@ -4,7 +4,7 @@
 
 钱袋是一款 iOS 上的个人资产口袋。把现金、基金、A 股、港股、美股、黄金、定投装进同一个口袋,一眼看到全部资产和今日盈亏 — 不再打开五六个 App 才能凑出"我现在有多少钱"。
 
-数据全部存在你自己的设备上,可选 iCloud 同步(端到端加密)。没有后端、没有账号、没有埋点。
+数据全部存在你自己的设备上,不上传任何服务器。没有后端、没有账号、没有埋点。
 
 - 落地页:<https://sakurallxa.github.io/moneymap-site/>
 - 隐私政策:<https://sakurallxa.github.io/moneymap-site/privacy.html>
@@ -41,17 +41,17 @@
 - SwiftUI + SwiftData(iOS 17+)
 - WidgetKit(主屏小部件)
 - LocalAuthentication(Face ID / 密码 fallback)
-- CloudKit(可选 iCloud 同步,端到端加密)
 - 中文衬线主字 — 思源宋体 / 宋体 SC fallback,见 [`docs/TYPOGRAPHY.md`](docs/TYPOGRAPHY.md)
 
 行情数据通过 `QuoteResolver` 按账户类型与代码后缀分发到对应 `PriceService`,失败时回落至最近一次缓存价。
 
 ## 数据与隐私
 
-- 所有持仓、交易、定投配置、价格缓存写入本地 SwiftData 容器
-- iCloud 同步默认 **关闭**;开启后通过用户自己的 iCloud Drive 加密同步,Apple 也读不到明文
+- 所有持仓、交易、定投配置、价格缓存写入本地 SwiftData 容器,不上传任何服务器
 - 行情接口仅出站 GET 公开行情,不上送任何持仓 / 身份信息
 - 没有第三方 SDK、没有埋点、没有用户画像
+
+> iCloud 同步预计 v1.1 加入(代码层面已埋好开关,模型需要补默认值 + CloudKit container)。
 
 完整声明见 [隐私政策](https://sakurallxa.github.io/moneymap-site/privacy.html)。
 

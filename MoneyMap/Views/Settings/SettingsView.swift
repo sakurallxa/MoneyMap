@@ -127,6 +127,13 @@ struct SettingsView: View {
                         )
                     }
 
+                    // TODO(v1.1): 恢复 iCloud 同步入口。
+                    // v1.0 没有走 CloudKit capability + 没在所有 @Model 上加内联默认值,
+                    // 开启 toggle 后 ModelContainer(for: schema, configurations: cloudConfig)
+                    // 会在 init 时抛错。为避免上架时审核员开关一拨就 crash,
+                    // 这一节先隐藏。底层 @AppStorage / App.init / .onChange 都保留,
+                    // v1.1 把 CloudKit capability + 模型默认值补齐后,把下面这块解开即可。
+                    /*
                     settingsGroup(header: "跨设备") {
                         SettingsRow(
                             iconName: "icloud.fill",
@@ -135,6 +142,7 @@ struct SettingsView: View {
                             trailing: .toggle($iCloudEnabled)
                         )
                     }
+                    */
 
                     settingsGroup(header: "行情数据源") {
                         SettingsRow(iconName: "chart.line.uptrend.xyaxis", iconColor: Theme.Bronze.dark, title: "基金净值", trailing: .info("天天 / 蛋卷"))

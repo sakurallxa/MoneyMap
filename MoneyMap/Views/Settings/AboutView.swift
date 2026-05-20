@@ -77,7 +77,7 @@ struct AboutView: View {
     private var privacyCard: some View {
         sectionCard(title: "数据与隐私") {
             VStack(alignment: .leading, spacing: 10) {
-                paragraph("所有资产数据存储在你自己的设备本地。开启 iCloud 同步后,数据通过你的 Apple ID 加密上传到 iCloud,我们不接触、不读取。")
+                paragraph("所有资产数据存储在你自己的设备本地,不会上传任何服务器。")
                 paragraph("行情拉取只发送资产代码到公开行情源(新浪/雅虎/天天/蛋卷/上海黄金交易所),不携带任何账户信息。")
                 paragraph("钱袋没有后端服务器,没有用户账号体系,不收集设备标识、不做行为追踪。")
             }
