@@ -124,14 +124,28 @@ struct AboutView: View {
     }
 
     private func paragraph(_ text: String) -> some View {
-        Text(text)
-            .font(Theme.serif(13))
-            .foregroundStyle(.secondary)
-            .lineSpacing(4)
+        Text(attributedParagraph(text))
             .frame(maxWidth: .infinity, alignment: .leading)
-            // 强制 Text 占满父容器横向宽度;否则 SwiftUI 在中文 + 衬线字体下
-            // 会保守换行(避免把"任何服务器"这种词组拆开),导致行尾留空。
             .fixedSize(horizontal: false, vertical: true)
+    }
+
+    /// iOS 默认 lineBreakStrategy = .pushOut — 中文场景下会主动把行尾词组挤到
+    /// 下一行(怕拆词),导致 "本地,不会上传 | 任何服务器" 这种行尾留空。
+    /// 这里用 NSAttributedString 把 strategy 设为空集合 [],强制紧密填充每一行,
+    /// 字体 / 行距 / 颜色一并在 attribute 里指定,避免与 SwiftUI 修饰器冲突。
+    private func attributedParagraph(_ text: String) -> AttributedString {
+        let style = NSMutableParagraphStyle()
+        style.lineBreakStrategy = []
+        style.lineSpacing = 4
+        let nsAttr = NSAttributedString(
+            string: text,
+            attributes: [
+                .paragraphStyle: style,
+                .font: Theme.uiSerif(size: 13),
+                .foregroundColor: UIColor.secondaryLabel
+            ]
+        )
+        return AttributedString(nsAttr)
     }
 }
 
