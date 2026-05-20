@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 设置 → 关于钱袋 二级页。展示 App 介绍 / 数据隐私 / 行情来源 / 致谢。
+/// 设置 → 关于钱袋 二级页。展示 App 介绍 / 数据隐私。
 struct AboutView: View {
     var body: some View {
         ScrollView {
@@ -8,7 +8,6 @@ struct AboutView: View {
                 heroBanner
                 introCard
                 privacyCard
-                creditsCard
                 footer
             }
             .padding(.horizontal, 14)
@@ -84,18 +83,6 @@ struct AboutView: View {
         }
     }
 
-    // MARK: - Credits
-
-    private var creditsCard: some View {
-        sectionCard(title: "致谢") {
-            VStack(alignment: .leading, spacing: 8) {
-                creditLine(name: "思源宋体", by: "Adobe Originals + Google")
-                creditLine(name: "SF Symbols", by: "Apple")
-                creditLine(name: "SwiftUI · SwiftData · WidgetKit", by: "Apple")
-            }
-        }
-    }
-
     // MARK: - Footer
 
     private var footer: some View {
@@ -142,20 +129,9 @@ struct AboutView: View {
             .foregroundStyle(.secondary)
             .lineSpacing(4)
             .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private func creditLine(name: String, by: String) -> some View {
-        HStack(alignment: .firstTextBaseline) {
-            Text(name)
-                .font(Theme.serif(13, weight: .semibold))
-                .foregroundStyle(.primary)
-            Text("·")
-                .foregroundStyle(.tertiary)
-            Text(by)
-                .font(Theme.serif(12))
-                .foregroundStyle(.secondary)
-            Spacer()
-        }
+            // 强制 Text 占满父容器横向宽度;否则 SwiftUI 在中文 + 衬线字体下
+            // 会保守换行(避免把"任何服务器"这种词组拆开),导致行尾留空。
+            .fixedSize(horizontal: false, vertical: true)
     }
 }
 
