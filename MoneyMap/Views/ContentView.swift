@@ -51,7 +51,10 @@ struct ContentView: View {
         }
         .tint(Theme.Palette.accentDark)    // 全局铜深色覆盖 SwiftUI 默认蓝 tint(系统 Back / Menu 等)
         .sheet(isPresented: $showRebalance) {
+            // 注意:.tint 不会穿透 sheet 环境,每个 sheet 内 NavigationStack
+            // 必须显式声明,否则 < 返回按钮会退回默认黑色 / 系统蓝。
             NavigationStack { RebalanceView() }
+                .tint(Theme.Palette.accentDark)
         }
         .sheet(item: $debugPrefill) { p in
             NavigationStack {
@@ -61,9 +64,11 @@ struct ContentView: View {
                     rebalancePrefill: p
                 )
             }
+            .tint(Theme.Palette.accentDark)
         }
         .sheet(isPresented: $showTargetSheet) {
             TargetAllocationSheet()
+                .tint(Theme.Palette.accentDark)
         }
         .overlay(ToastOverlayView())
         .onReceive(NotificationCenter.default.publisher(for: .switchToTab)) { note in

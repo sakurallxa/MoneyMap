@@ -256,30 +256,23 @@ struct HeroPnLCard: View {
     }
 
     /// 距离首笔交易过去的天数(nil 代表完全没交易)。
-    /// 用于决定:① 标题用"年化收益率"还是"累计回报" ② 副标显示天数。
     private var daysSinceFirstTx: Int? {
         guard let earliestDate else { return nil }
         return Calendar.current.dateComponents([.day], from: earliestDate, to: Date()).day
     }
 
-    /// 不足 30 天时 DashboardView 直接返回累计百分比(避免短期复利炸天)。
-    /// 这里跟着用同一阈值,标题切到"累计回报"以与值的真实含义对齐 — 不能在
-    /// 30 天内显示"年化"却给出累计数字,会误导用户。
-    private var isAnnualizedMeaningful: Bool {
-        (daysSinceFirstTx ?? 0) >= 30
-    }
-
-    /// 右格 · 年化收益率(CAGR,从首笔交易至今)/ 累计回报(< 30 天)
+    /// 右格 · 年化收益率(标题恒定)。
+    /// 值的计算仍走 DashboardView 阈值逻辑:不足 30 天为累计百分比(避免
+    /// 短期复利炸天),≥ 30 天为真正的 CAGR。标题不切换,副标只显示天数,
+    /// 保持视觉简洁,避免行尾被截断。
     private var annualizedCell: some View {
         let cellColor: Color = annualizedPct >= 0
             ? Theme.Palette.heroAccentRed
             : Theme.Palette.heroAccentGreen
-        let title = isAnnualizedMeaningful ? "年化收益率" : "累计回报"
+        let title = "年化收益率"
         let subtitle: String = {
             guard let d = daysSinceFirstTx else { return "暂无交易记录" }
-            return isAnnualizedMeaningful
-                ? "首笔交易 \(d) 天前"
-                : "首笔交易 \(d) 天前 · 不足 30 天暂不年化"
+            return "首笔交易 \(d) 天前"
         }()
         return VStack(alignment: .leading, spacing: 6) {
             Text(title)

@@ -147,27 +147,31 @@ struct TransactionFormView: View {
     private var canSubmit: Bool { validationError == nil }
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            ScrollView {
-                VStack(spacing: 18) {
-                    AmountInputView(
-                        type: type,
-                        amountText: $amountText
-                    )
-                    .padding(.top, 20)
+        // 用 .safeAreaInset 而不是 ZStack 把 CTA 钉在底部,理由:
+        // ① iOS 自带键盘避让走 safe area,ZStack 偶发推不上去(用户报"按钮被键盘遮住")
+        // ② safeAreaInset 注入的视图自带正确背景延伸,iOS 26 大圆角键盘
+        //    左下/右下角不会再露出空白
+        // ③ 报错 banner 改在 stickyCTA 内部带 pageBgWarm 背景,不再透出底层卡片
+        ScrollView {
+            VStack(spacing: 18) {
+                AmountInputView(
+                    type: type,
+                    amountText: $amountText
+                )
+                .padding(.top, 20)
 
-                    typeHero
+                typeHero
 
-                    fundFlowCard
+                fundFlowCard
 
-                    secondaryFields
+                secondaryFields
 
-                    Spacer(minLength: 110)
-                }
-                .padding(.horizontal, 14)
+                Spacer(minLength: 24)
             }
-            .background(Theme.Palette.pageBgWarm.ignoresSafeArea())
-
+            .padding(.horizontal, 14)
+        }
+        .background(Theme.Palette.pageBgWarm.ignoresSafeArea())
+        .safeAreaInset(edge: .bottom, spacing: 0) {
             stickyCTA
         }
         .navigationTitle("")
@@ -989,6 +993,7 @@ struct TransactionFormView: View {
 
     private var stickyCTA: some View {
         VStack(spacing: 0) {
+            // 顶部柔和渐变,从透明渐变到 pageBgWarm,避让 ScrollView 内容紧贴 CTA 边缘
             LinearGradient(
                 colors: [Theme.Palette.pageBgWarm.opacity(0), Theme.Palette.pageBgWarm],
                 startPoint: .top,
@@ -996,7 +1001,7 @@ struct TransactionFormView: View {
             )
             .frame(height: 24)
 
-            // P0:不通过时显式提示原因,而不是让用户对着灰按钮抓瞎
+            // 报错 banner — 必须自带 pageBgWarm 背景,否则透明会暴露下面的卡片造成"文字重叠"
             if let reason = validationError, !amountText.isEmpty {
                 HStack(spacing: 4) {
                     Image(systemName: "info.circle")
@@ -1005,8 +1010,10 @@ struct TransactionFormView: View {
                         .font(Theme.serif(12))
                 }
                 .foregroundStyle(Theme.Semantic.warning)
+                .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.horizontal, 18)
                 .padding(.bottom, 6)
+                .background(Theme.Palette.pageBgWarm)
             }
 
             Button {
@@ -1026,9 +1033,13 @@ struct TransactionFormView: View {
             .buttonStyle(.plain)
             .disabled(!canSubmit)
             .padding(.horizontal, 14)
-            .padding(.bottom, 28)
+            .padding(.top, 4)
+            .padding(.bottom, 12)
             .background(Theme.Palette.pageBgWarm)
         }
+        // 整段 stickyCTA 用 pageBgWarm 兜底,并把背景延展到底部 safeArea —
+        // iOS 26 大圆角键盘弹起时,左下/右下角不会再露出空白或下层卡片。
+        .background(Theme.Palette.pageBgWarm.ignoresSafeArea(edges: .bottom))
     }
 
     private var ctaText: String {
