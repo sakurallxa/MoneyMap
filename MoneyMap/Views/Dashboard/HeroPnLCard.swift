@@ -261,10 +261,17 @@ struct HeroPnLCard: View {
         return Calendar.current.dateComponents([.day], from: earliestDate, to: Date()).day
     }
 
-    /// 右格 · 年化收益率(标题恒定)。
-    /// 值的计算仍走 DashboardView 阈值逻辑:不足 30 天为累计百分比(避免
-    /// 短期复利炸天),≥ 30 天为真正的 CAGR。标题不切换,副标只显示天数,
-    /// 保持视觉简洁,避免行尾被截断。
+    /// 不足 30 天的累计百分比"年化"在数学上没意义(过度复利炸天),
+    /// 因此 30 天以内只显示"暂不足"占位,不秀任何数字 —
+    /// 既诚实(不假装算得出年化)又是个友好的"再用一个月会看到的"暗示。
+    private var hasEnoughDataForAnnualized: Bool {
+        (daysSinceFirstTx ?? 0) >= 30
+    }
+
+    /// 右格 · 年化收益率(标题恒定)。三态:
+    /// - 无交易 → 主数字"—" + 副标"暂无交易记录"
+    /// - <30 天 → 主数字"暂不足" + 副标"首笔交易 X 天前 · 需满 30 天"
+    /// - ≥30 天 → 主数字 ±X.XX% + 副标"首笔交易 X 天前"
     private var annualizedCell: some View {
         let cellColor: Color = annualizedPct >= 0
             ? Theme.Palette.heroAccentRed
@@ -272,28 +279,47 @@ struct HeroPnLCard: View {
         let title = "年化收益率"
         let subtitle: String = {
             guard let d = daysSinceFirstTx else { return "暂无交易记录" }
-            return "首笔交易 \(d) 天前"
+            return hasEnoughDataForAnnualized
+                ? "首笔交易 \(d) 天前"
+                : "首笔交易 \(d) 天前 · 需满 30 天"
         }()
         return VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(Theme.TypeToken.label(11))
                 .foregroundStyle(Color.white.opacity(0.6))
 
-            HStack(alignment: .firstTextBaseline, spacing: 1) {
-                Text(annualizedPct >= 0 ? "+" : "−")
-                    .font(.system(size: 15, weight: .heavy))
-                    .foregroundStyle(cellColor.opacity(0.9))
-                Text(hideBalance ? "··" : String(format: "%.2f", abs(annualizedPct)))
+            // 主数字区:三态分支
+            if daysSinceFirstTx == nil {
+                // 无交易
+                Text("—")
                     .font(.system(size: 22, weight: .heavy))
-                    .kerning(-0.5)
-                    .foregroundStyle(cellColor)
-                    .monospacedDigit()
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                Text("%")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(cellColor.opacity(0.85))
-                    .baselineOffset(0.5)
+                    .foregroundStyle(Color.white.opacity(0.35))
+                    .frame(height: 26, alignment: .leading)
+            } else if !hasEnoughDataForAnnualized {
+                // <30 天:占位"暂不足"
+                Text("暂不足")
+                    .font(.system(size: 17, weight: .heavy))
+                    .kerning(-0.3)
+                    .foregroundStyle(Color.white.opacity(0.5))
+                    .frame(height: 26, alignment: .leading)
+            } else {
+                // ≥30 天:正常 CAGR 百分比
+                HStack(alignment: .firstTextBaseline, spacing: 1) {
+                    Text(annualizedPct >= 0 ? "+" : "−")
+                        .font(.system(size: 15, weight: .heavy))
+                        .foregroundStyle(cellColor.opacity(0.9))
+                    Text(hideBalance ? "··" : String(format: "%.2f", abs(annualizedPct)))
+                        .font(.system(size: 22, weight: .heavy))
+                        .kerning(-0.5)
+                        .foregroundStyle(cellColor)
+                        .monospacedDigit()
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                    Text("%")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(cellColor.opacity(0.85))
+                        .baselineOffset(0.5)
+                }
             }
 
             Text(subtitle)
@@ -306,9 +332,12 @@ struct HeroPnLCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(glassCellBackground)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(hideBalance
-            ? "\(title) 已隐藏"
-            : "\(title) \(annualizedPct.accessibilityPercentLabel()) · \(subtitle)")
+        .accessibilityLabel({
+            if hideBalance { return "\(title) 已隐藏" }
+            if daysSinceFirstTx == nil { return "\(title) 暂无交易记录" }
+            if !hasEnoughDataForAnnualized { return "\(title) 数据暂不足 \(subtitle)" }
+            return "\(title) \(annualizedPct.accessibilityPercentLabel()) · \(subtitle)"
+        }())
     }
 
     // MARK: - helpers
