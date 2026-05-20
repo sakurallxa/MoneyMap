@@ -229,9 +229,13 @@ struct SettingsView: View {
     }
 
     /// P1-013:摘要型副标(版本号 + 同步状态)
+    /// v1.0 iCloud 入口已隐藏,这里固定显示"本地优先" — 防止旧 build
+    /// UserDefaults 残留 iCloudSyncEnabled=true 导致 UI 误报"iCloud 已开启"。
+    /// v1.1 恢复 iCloud 时,把下面这行改回条件分支即可:
+    /// return iCloudEnabled ? "\(v) · iCloud 已开启" : "\(v) · 本地优先"
     private var settingsSubtitle: String {
         let v = "v0.1.0"
-        return iCloudEnabled ? "\(v) · iCloud 已开启" : "\(v) · 本地优先"
+        return "\(v) · 本地优先"
     }
 
     private var profileCard: some View {
