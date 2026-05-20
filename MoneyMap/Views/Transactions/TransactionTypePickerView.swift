@@ -51,17 +51,19 @@ enum TransactionFormType: Hashable {
         }
     }
 
-    /// 颜色按"钱/持仓方向"统一,与 TransactionRow 保持一致
+    /// 颜色按"钱流方向"统一(与 AmountInputView 的大金额数字一致):
+    /// - 钱进来 = 红(资产+)
+    /// - 钱出去 = 绿(资产-)
+    /// - 转账 = 铜(内部流转无情绪)
+    ///
+    /// 这样首次买入页:大金额绿 + 图标绿底 + 确认按钮绿,三处统一。
+    /// 之前用"持仓方向"上色会出现"绿金额配红图标"的不和谐。
     var color: Color {
         switch self {
-        // 持仓增加 — 红
-        case .buyExisting, .buyNew: return Theme.Palette.pnlUp
-        // 持仓减少 — 绿
-        case .sell: return Theme.Palette.pnlDown
-        // 现金增加 — 红
-        case .deposit, .dividend: return Theme.Palette.pnlUp
-        // 现金减少 — 绿
-        case .withdraw: return Theme.Palette.pnlDown
+        // 钱进来 — 红
+        case .sell, .deposit, .dividend: return Theme.Palette.pnlUp
+        // 钱出去 — 绿
+        case .buyExisting, .buyNew, .withdraw: return Theme.Palette.pnlDown
         // 中性 — 铜
         case .transfer: return Theme.Bronze.dark
         }

@@ -267,22 +267,17 @@ struct TransactionRow: View {
         }
     }
 
-    /// 颜色按"钱/持仓方向"统一:增加 = pnlUp(红),减少 = pnlDown(绿),中性 = 铜
+    /// 颜色按"钱流方向"统一(与 TransactionFormType.color / AmountInputView 一致):
+    /// 钱进来 = pnlUp(红),钱出去 = pnlDown(绿),转账中性 = 铜
     private var iconBg: Color {
         switch tx.type {
-        // 持仓增加 / 现金减少 — 红
-        case .buyFund, .buyStock, .dcaDeduct, .dcaConfirm:
-            return Theme.Palette.pnlUp
-        // 持仓减少 / 现金增加 — 绿
-        case .sellFund, .sellStock:
+        // 钱出去 — 绿(买入 / 定投扣款 / 出金)
+        case .buyFund, .buyStock, .dcaDeduct, .dcaConfirm, .withdraw:
             return Theme.Palette.pnlDown
-        // 现金增加 — 红
-        case .deposit, .dividend:
+        // 钱进来 — 红(卖出 / 入金 / 分红)
+        case .sellFund, .sellStock, .deposit, .dividend:
             return Theme.Palette.pnlUp
-        // 现金减少 — 绿
-        case .withdraw:
-            return Theme.Palette.pnlDown
-        // 中性 — 铜
+        // 中性 — 铜(转账)
         case .transfer:
             return Theme.Bronze.dark
         }
